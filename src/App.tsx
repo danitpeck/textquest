@@ -4,8 +4,7 @@ import './components/PlayerOptionsBar.css';
 import { useState, useEffect } from 'react';
 import GameWindow from './components/GameWindow';
 import CommandInput from './components/CommandInput';
-
-import CompassFloat from './components/CompassFloat';
+import Compass from './components/Compass';
 import AsciiMap from './components/AsciiMap';
 
 import { rooms } from './engine/rooms';
@@ -25,8 +24,8 @@ const App: React.FC = () => {
     })()
   ]);
   const [theme, setTheme] = useState<'default' | 'amber' | 'green'>('default');
-  // Floating compass state
-  const [showCompass, setShowCompass] = useState(true);
+  // Compass state
+  const [showCompass, setShowCompass] = useState(false);
   // ASCII map toggle state
   const [showMap, setShowMap] = useState(true);
 
@@ -139,9 +138,29 @@ const App: React.FC = () => {
       <h1>TextQuest</h1>
 
       {/* Game Window and Command Input */}
-      <div style={{ position: 'relative', width: '100%' }}>
-        <GameWindow output={output} />
-        <CommandInput onCommand={handleCommand} />
+      <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', width: '100%' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <GameWindow output={output} />
+          <CommandInput onCommand={handleCommand} />
+        </div>
+        {/* Mini map and compass docked right, stacked if both visible */}
+        {(showMap || showCompass) && (
+          <div style={{ marginLeft: 32, marginTop: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 180 }}>
+            {showMap && (
+              <AsciiMap
+                rooms={rooms}
+                currentRoomId={currentRoom.id}
+                size={3}
+                theme={theme}
+              />
+            )}
+            {showCompass && (
+              <div style={{ marginTop: showMap ? 16 : 0 }}>
+                <Compass exits={Object.keys(currentRoom.exits)} />
+              </div>
+            )}
+          </div>
+        )}
       </div>
       
       {/* Player Options Bar */}
@@ -164,29 +183,6 @@ const App: React.FC = () => {
         </button>
         {/* Add more player config buttons here in the future */}
       </div>
-
-      {/* Floating Compass */}
-      <div style={{ display: 'flex', justifyContent: 'center' }}>
-        {/* Floating Compass window, now near the game window */}
-        <div style={{ position: 'absolute', top: 0, right: 0 }}>
-          <CompassFloat
-            exits={Object.keys(currentRoom.exits)}
-            visible={showCompass}
-            onClose={() => setShowCompass(false)}
-          />
-        </div>
-      </div>
-
-      {/* ASCII Map */}
-      {showMap && (
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <AsciiMap
-            rooms={rooms}
-            currentRoomId={currentRoom.id}
-            size={3}
-          />
-        </div>
-      )}
     </div>
   );
 }

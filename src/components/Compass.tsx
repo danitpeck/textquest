@@ -25,19 +25,19 @@ const Compass: React.FC<CompassProps> = ({ exits }) => {
 
   // ASCII template for the compass
   const template = [
-    '   N   ',
-    'D W (*) E U',
-    '   S   ',
+    '  N U',
+    'W @ E',
+    'D S  ',
   ];
 
   // Map of direction letters to their positions in the template
   const dirMap: Record<string, { row: number, col: number }> = {
-    n: { row: 0, col: 3 },
-    s: { row: 2, col: 3 },
-    e: { row: 1, col: 8 },
-    w: { row: 1, col: 2 },
-    u: { row: 1, col: 10 },
-    d: { row: 1, col: 0 },
+    n: { row: 0, col: 2 },
+    s: { row: 2, col: 2 },
+    w: { row: 1, col: 0 },
+    e: { row: 1, col: 4 },
+    u: { row: 0, col: 4 },
+    d: { row: 2, col: 0 },
   };
 
   // Set of available exits (normalized)
@@ -60,8 +60,8 @@ const Compass: React.FC<CompassProps> = ({ exits }) => {
           </span>
         );
       }
-      // Center marker (*) always highlighted
-      if (ch === '*') {
+      // Center marker @ always highlighted
+      if (ch === '@') {
         return (
           <span
             key={colIdx}
@@ -76,14 +76,16 @@ const Compass: React.FC<CompassProps> = ({ exits }) => {
     });
 
   return (
-    <pre className="compass-root">
-      {template.map((row, i) => (
-        <React.Fragment key={i}>
-          {renderRow(row, i)}
-          {'\n'}
-        </React.Fragment>
-      ))}
-    </pre>
+    <div className="compass-root">
+      <pre style={{ margin: 0, padding: 0, display: 'inline-block', verticalAlign: 'middle' }}>
+        {template.map((row, i) => (
+          <React.Fragment key={i}>
+            {renderRow(row, i)}
+            {'\n'}
+          </React.Fragment>
+        ))}
+      </pre>
+    </div>
   );
 };
 

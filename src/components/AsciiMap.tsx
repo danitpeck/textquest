@@ -7,9 +7,10 @@ interface AsciiMapProps {
   rooms: Room[];
   currentRoomId: string;
   size?: number; // grid size (default 3)
+  theme?: 'default' | 'amber' | 'green';
 }
 
-const AsciiMap: React.FC<AsciiMapProps> = ({ rooms, currentRoomId, size = 3 }) => {
+const AsciiMap: React.FC<AsciiMapProps> = ({ rooms, currentRoomId, size = 3, theme = 'default' }) => {
   // Find current room's coordinates
   const current = rooms.find(r => r.id === currentRoomId);
   const center = current ? { x: current.x, y: current.y } : { x: 0, y: 0 };
@@ -37,16 +38,27 @@ const AsciiMap: React.FC<AsciiMapProps> = ({ rooms, currentRoomId, size = 3 }) =
         <div key={y}>
           {row.map((cell, x) => {
             if (!cell) return <span key={x}>&nbsp;&nbsp;</span>;
-            // Determine symbol and color by room type (simple heuristic for now)
+            // Determine symbol and color by room type and theme
             let symbol = '*';
             let color = '#3f6'; // default: green for forest
-            // Example: use room name to guess type
             if (cell.description.toLowerCase().includes('river')) {
               symbol = '~';
               color = '#4cf';
             } else if (cell.description.toLowerCase().includes('clearing')) {
               symbol = 'o';
               color = '#fd0';
+            }
+            // Theme overrides
+            if (theme === 'amber') {
+              color = '#ffb300';
+              if (cell.description.toLowerCase().includes('river')) symbol = '=';
+              else if (cell.description.toLowerCase().includes('clearing')) symbol = '@';
+              else symbol = '*';
+            } else if (theme === 'green') {
+              color = '#8f8';
+              if (cell.description.toLowerCase().includes('river')) symbol = '-';
+              else if (cell.description.toLowerCase().includes('clearing')) symbol = 'O';
+              else symbol = '+';
             }
             const isCurrent = cell.id === currentRoomId;
             return (

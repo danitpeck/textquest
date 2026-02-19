@@ -37,6 +37,14 @@
   --scrollbar-thumb: #23233a;
   --scrollbar-track: #181818;
   --button-text: #fffbe6;
+  --border-ui: #3a3ad1;
+}
+
+.theme-amber {
+  --border-ui: #ffb300;
+}
+.theme-green {
+  --border-ui: #8f8;
 }
 
 .game-container h1 {
