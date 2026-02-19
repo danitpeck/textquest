@@ -7,14 +7,19 @@
     "exits": {
       "north": {
         "to": "deep_forest",
-        "exitDescription": "Tall trees block the way north."
+        "exitDescription": "A narrow path winds north between the tall trees."
       },
       "east": {
         "to": "river_bank",
         "exitDescription": "You see a glimmer of water through the trees."
       }
     },
-    "items": ["mossy_stone", "wildflower"]
+    "items": ["mossy_stone", "wildflower"],
+    "lookDescriptions": {
+      "trees": "The ancient trees tower above, their leaves forming a green canopy.",
+      "stone": "A mossy stone, cool and damp to the touch.",
+      "wildflower": "A delicate wildflower with vibrant petals."
+    }
   },
   {
     "id": "deep_forest",
@@ -27,6 +32,28 @@
         "exitDescription": "You see sunlight to the south."
       }
     },
-    "items": []
+    "items": [],
+    "lookDescriptions": {
+      "trees": "The trees are tall and dense, blocking out most of the light.",
+      "air": "The air is cool and damp."
+    }
+  },
+  {
+    "id": "river_bank",
+    "name": "River Bank",
+    "description": "You stand on the muddy bank of a gently flowing river. The water sparkles in the sunlight.",
+    "skyDescription": "A few wispy clouds drift across the blue sky above the river.",
+    "exits": {
+      "west": {
+        "to": "forest_clearing",
+        "exitDescription": "The forest clearing is visible through the trees to the west."
+      }
+    },
+    "items": ["smooth_pebble", "reeds"],
+    "lookDescriptions": {
+      "river": "The river flows gently, its surface sparkling in the sunlight.",
+      "pebble": "A smooth, flat pebble lies at your feet.",
+      "reeds": "Tall green reeds sway at the water's edge."
+    }
   }
 ]

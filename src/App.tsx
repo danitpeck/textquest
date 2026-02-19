@@ -3,6 +3,7 @@ import './App.css';
 import { useState, useEffect } from 'react';
 import GameWindow from './components/GameWindow';
 import CommandInput from './components/CommandInput';
+import Compass from './components/Compass';
 
 import { rooms } from './engine/rooms';
 import type { Room } from './engine/rooms';
@@ -20,6 +21,43 @@ const App: React.FC = () => {
     setOutput(prev => [...prev, `> ${command}`]);
     const cmd = command.trim().toLowerCase();
 
+    // Look parser first, so 'look north' doesn't trigger movement
+    const look = parseLook(cmd);
+    if (look) {
+      if (!look.target) {
+        setOutput(prev => [...prev, currentRoom.description]);
+        return;
+      }
+      // look <sky> (always handle first)
+      if (look.target === 'sky') {
+        if (currentRoom.skyDescription) {
+          setOutput(prev => [...prev, currentRoom.skyDescription ?? "You can't see the sky from here."]);
+        } else {
+          setOutput(prev => [...prev, "You can't see the sky from here."]);
+        }
+        return;
+      }
+      // look <thing> (custom look descriptions)
+      if (currentRoom.lookDescriptions && currentRoom.lookDescriptions[look.target]) {
+        const desc = currentRoom.lookDescriptions[look.target];
+        setOutput(prev => [...prev, desc ?? "You see nothing special."]);
+        return;
+      }
+      // look <direction>
+      const dir = look.target;
+      const exit = currentRoom.exits[dir];
+      if (exit && exit.exitDescription) {
+        setOutput(prev => [...prev, exit.exitDescription ?? "You see nothing special that way."]);
+        return;
+      } else if (exit) {
+        setOutput(prev => [...prev, "You see nothing special that way."]);
+        return;
+      }
+      // fallback
+      setOutput(prev => [...prev, "You see nothing special."]);
+      return;
+    }
+
     // Movement parser
     const dir = parseMovement(cmd);
     if (dir) {
@@ -34,34 +72,6 @@ const App: React.FC = () => {
         }
       } else {
         setOutput(prev => [...prev, "You can't go that way."]);
-      }
-      return;
-    }
-
-    // Look parser
-    const look = parseLook(cmd);
-    if (look) {
-      if (!look.target) {
-        setOutput(prev => [...prev, currentRoom.description]);
-        return;
-      }
-      if (look.target === 'sky') {
-        if (currentRoom.skyDescription) {
-          setOutput(prev => [...prev, currentRoom.skyDescription ?? "You can't see the sky from here."]);
-        } else {
-          setOutput(prev => [...prev, "You can't see the sky from here."]);
-        }
-        return;
-      }
-      // look <direction>
-      const dir = look.target;
-      const exit = currentRoom.exits[dir];
-      if (exit && exit.exitDescription) {
-        setOutput(prev => [...prev, exit.exitDescription ?? "You see nothing special that way."]);
-      } else if (exit) {
-        setOutput(prev => [...prev, "You see nothing special that way."]);
-      } else {
-        setOutput(prev => [...prev, "There's nothing notable in that direction."]);
       }
       return;
     }
@@ -83,65 +93,31 @@ const App: React.FC = () => {
 
   return (
     <div className="game-container">
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.5rem' }}>
+      <div className="theme-switcher">
         <button
-          style={{
-            marginRight: 8,
-            background: theme === 'default' ? 'var(--accent)' : 'var(--bg-panel)',
-            color: theme === 'default' ? 'var(--button-text)' : 'var(--text-main)',
-            border: 'none',
-            borderRadius: 4,
-            padding: '0.3rem 0.9rem',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-            fontSize: '1rem',
-            boxShadow: theme === 'default' ? '0 1px 4px #0004' : 'none',
-            transition: 'background 0.2s',
-          }}
+          className={`theme-button${theme === 'default' ? ' selected' : ''}`}
           onClick={() => setTheme('default')}
         >
           Retro Dark
         </button>
         <button
-          style={{
-            background: theme === 'amber' ? 'var(--accent)' : 'var(--bg-panel)',
-            color: theme === 'amber' ? 'var(--button-text)' : 'var(--text-main)',
-            border: 'none',
-            borderRadius: 4,
-            padding: '0.3rem 0.9rem',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-            fontSize: '1rem',
-            boxShadow: theme === 'amber' ? '0 1px 4px #0004' : 'none',
-            transition: 'background 0.2s',
-          }}
+          className={`theme-button${theme === 'amber' ? ' selected' : ''}`}
           onClick={() => setTheme('amber')}
         >
           Amber Terminal
         </button>
         <button
-          style={{
-            background: theme === 'green' ? 'var(--accent)' : 'var(--bg-panel)',
-            color: theme === 'green' ? 'var(--button-text)' : 'var(--text-main)',
-            border: 'none',
-            borderRadius: 4,
-            padding: '0.3rem 0.9rem',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-            fontSize: '1rem',
-            boxShadow: theme === 'green' ? '0 1px 4px #0004' : 'none',
-            transition: 'background 0.2s',
-            marginLeft: 8
-          }}
+          className={`theme-button${theme === 'green' ? ' selected' : ''}`}
           onClick={() => setTheme('green')}
         >
           Apple II Green
         </button>
       </div>
       <h1>TextQuest</h1>
+      {/* Compass UI above the game window */}
+      <Compass
+        exits={Object.keys(currentRoom.exits)}
+      />
       <GameWindow output={output} />
       <CommandInput onCommand={handleCommand} />
     </div>

@@ -7,7 +7,8 @@ export function parseLook(command: string): { type: 'look', target?: string } | 
     if (words.length === 1) return { type: 'look' };
     if (words[1] === 'sky') return { type: 'look', target: 'sky' };
     // look <direction>
-    return { type: 'look', target: words.slice(1).join(' ') };
+    const dir = directionSynonyms[words[1]] || words[1];
+    return { type: 'look', target: dir };
   }
   return null;
 }

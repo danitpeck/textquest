@@ -52,3 +52,56 @@
 - Full plot outline
 - NPC list and roles
 - Skill progression system
+
+## ASCII Mini Map & Exits Visualization
+
+- The game displays a compact ASCII mini map (default 3x3 grid) showing the player’s current room (@) and immediate surroundings.
+- Map symbols:
+  - [@] = player’s current room
+  - [ ] = adjacent rooms (empty if unmapped)
+  - Lines (|, -, +) show possible connections/exits
+- Directly below or beside the map, a compass rose (N, S, E, W, U, D) displays available exits, with directions highlighted if accessible from the current room.
+- The mini map is always visible in the UI for spatial awareness and retro feel.
+- Future upgrades (items, spells, abilities) can expand the map to 4x4 or 5x5, revealing a larger area and more rooms at once.
+- This system supports both classic navigation and rewarding exploration/progression.
+
+Example (3x3):
+```
+[ ]-[ ]-[ ]
+ |   |   |
+[ ]-[@]-[ ]
+ |   |   |
+[ ]-[ ]-[ ]
+```
+
+Example (5x5, with upgrade):
+```
+[ ]-[ ]-[ ]-[ ]-[ ]
+ |   |   |   |   |
+[ ]-[ ]-[ ]-[ ]-[ ]
+ |   |   |   |   |
+[ ]-[ ]-[@]-[ ]-[ ]
+ |   |   |   |   |
+[ ]-[ ]-[ ]-[ ]-[ ]
+ |   |   |   |   |
+[ ]-[ ]-[ ]-[ ]-[ ]
+```
+
+- The map rendering logic should support variable sizes for easy upgrades.
+- The compass and exits list should remain clear and accessible for all players.
+
+## Retro ASCII Compass Design
+
+- The compass is displayed as a single horizontal line, with Up (U) and Down (D) exits shown between the player marker (*) and the East/West exits.
+- Example (player at center, all directions available):
+
+```
+NW       N        NE
+W <--D--(*)--U--> E
+SW       S        SE
+```
+
+- N/S can be shown above/below, or as part of the minimap context.
+- Highlight available directions (color, bold, or brackets). Dim or omit unavailable directions.
+- This design is compact, retro, and easy to parse at a glance.
+- The minimap and compass are separate components, so the compass can be iterated or replaced independently.

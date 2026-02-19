@@ -1,6 +1,4 @@
-
 import roomsData from '../data/rooms.json';
-
 
 export interface RoomExit {
   to: string;
@@ -14,6 +12,7 @@ export interface Room {
   skyDescription?: string;
   exits: { [direction: string]: RoomExit };
   items: string[];
+  lookDescriptions?: Record<string, string>;
 }
 
 function isRoomExit(obj: any): obj is RoomExit {
@@ -41,6 +40,7 @@ function validateRoom(raw: any): Room {
     skyDescription: raw.skyDescription ? String(raw.skyDescription) : undefined,
     exits,
     items: Array.isArray(raw.items) ? raw.items.map(String) : [],
+    lookDescriptions: raw.lookDescriptions && typeof raw.lookDescriptions === 'object' ? { ...raw.lookDescriptions } : undefined,
   };
 }
 
