@@ -1,0 +1,32 @@
+[
+  {
+    "id": "forest_clearing",
+    "name": "Forest Clearing",
+    "description": "You are in a sun-dappled clearing surrounded by ancient trees.",
+    "skyDescription": "The sky is bright and clear above the trees.",
+    "exits": {
+      "north": {
+        "to": "deep_forest",
+        "exitDescription": "Tall trees block the way north."
+      },
+      "east": {
+        "to": "river_bank",
+        "exitDescription": "You see a glimmer of water through the trees."
+      }
+    },
+    "items": ["mossy_stone", "wildflower"]
+  },
+  {
+    "id": "deep_forest",
+    "name": "Deep Forest",
+    "description": "Tall trees block out most of the light. The air is cool and damp.",
+    "skyDescription": "You can barely see the sky through the thick canopy.",
+    "exits": {
+      "south": {
+        "to": "forest_clearing",
+        "exitDescription": "You see sunlight to the south."
+      }
+    },
+    "items": []
+  }
+]

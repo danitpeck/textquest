@@ -1,0 +1,14 @@
+[
+  {
+    "id": "mossy_stone",
+    "name": "Mossy Stone",
+    "description": "A smooth stone covered in soft green moss. It feels cool to the touch.",
+    "location": "forest_clearing"
+  },
+  {
+    "id": "wildflower",
+    "name": "Wildflower",
+    "description": "A delicate wildflower with vibrant purple petals.",
+    "location": "forest_clearing"
+  }
+]
