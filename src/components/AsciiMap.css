@@ -1,0 +1,38 @@
+.ascii-map-root {
+  border: 1px solid #4a6;
+  border-radius: 8px;
+  display: inline-block;
+  padding: 16px 24px;
+  margin: 16px 0;
+  background: rgba(30, 40, 40, 0.7);
+  font-size: 1.5rem;
+  color: #8cf;
+  box-shadow: 0 0 0 1px #234 inset;
+  font-family: 'Fira Mono', 'Consolas', 'Menlo', 'Monaco', monospace;
+  text-align: center;
+}
+
+.ascii-map-root > div {
+  display: flex;
+  justify-content: center;
+}
+
+.ascii-map-root span {
+  display: inline-block;
+  width: 2ch;
+  height: 2ch;
+  text-align: center;
+  line-height: 2ch;
+  box-sizing: border-box;
+}
+
+.ascii-map-room {
+  display: inline-block;
+  width: 5ch;
+  text-align: center;
+  color: var(--text-main, #ffe7b3);
+}
+.ascii-map-room--current {
+  color: var(--text-heading, #ffb300);
+  font-weight: bold;
+}

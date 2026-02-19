@@ -10,6 +10,8 @@ export interface Room {
   name: string;
   description: string;
   skyDescription?: string;
+  x: number;
+  y: number;
   exits: { [direction: string]: RoomExit };
   items: string[];
   lookDescriptions?: Record<string, string>;
@@ -38,6 +40,8 @@ function validateRoom(raw: any): Room {
     name: String(raw.name),
     description: String(raw.description),
     skyDescription: raw.skyDescription ? String(raw.skyDescription) : undefined,
+    x: typeof raw.x === 'number' ? raw.x : 0,
+    y: typeof raw.y === 'number' ? raw.y : 0,
     exits,
     items: Array.isArray(raw.items) ? raw.items.map(String) : [],
     lookDescriptions: raw.lookDescriptions && typeof raw.lookDescriptions === 'object' ? { ...raw.lookDescriptions } : undefined,

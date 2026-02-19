@@ -1,18 +1,38 @@
 [
   {
+    "id": "corner_nw",
+    "name": "NW Corner",
+    "description": "A quiet, mossy corner of the woods.",
+    "skyDescription": "The sky is barely visible through the branches.",
+    "x": 0,
+    "y": 0,
+    "exits": { "east": { "to": "deep_forest", "exitDescription": "A faint trail leads east into the deep forest." }, "south": { "to": "edge_west", "exitDescription": "A path heads south." } },
+    "items": [],
+    "lookDescriptions": { "moss": "Thick moss covers the ground." }
+  },
+  {
+    "id": "edge_west",
+    "name": "West Edge",
+    "description": "The western edge of the clearing, shaded and cool.",
+    "skyDescription": "Filtered sunlight streams through the trees.",
+    "x": 0,
+    "y": 1,
+    "exits": { "north": { "to": "corner_nw", "exitDescription": "A path heads north." }, "east": { "to": "forest_clearing", "exitDescription": "A path leads east." }, "south": { "to": "corner_sw", "exitDescription": "A path leads south." } },
+    "items": [],
+    "lookDescriptions": { "shade": "The shade is deep and cool." }
+  },
+  {
     "id": "forest_clearing",
     "name": "Forest Clearing",
     "description": "You are in a sun-dappled clearing surrounded by ancient trees.",
     "skyDescription": "The sky is bright and clear above the trees.",
+    "x": 1,
+    "y": 1,
     "exits": {
-      "north": {
-        "to": "deep_forest",
-        "exitDescription": "A narrow path winds north between the tall trees."
-      },
-      "east": {
-        "to": "river_bank",
-        "exitDescription": "You see a glimmer of water through the trees."
-      }
+      "north": { "to": "deep_forest", "exitDescription": "A path leads north into the deep forest." },
+      "east": { "to": "river_bank", "exitDescription": "A path leads east to the river bank." },
+      "south": { "to": "edge_south", "exitDescription": "A path leads south." },
+      "west": { "to": "edge_west", "exitDescription": "A path leads west." }
     },
     "items": ["mossy_stone", "wildflower"],
     "lookDescriptions": {
@@ -22,10 +42,45 @@
     }
   },
   {
+    "id": "corner_sw",
+    "name": "SW Corner",
+    "description": "A damp, ferny corner of the woods.",
+    "skyDescription": "The sky is hidden by thick branches.",
+    "x": 0,
+    "y": 2,
+    "exits": { "north": { "to": "edge_west", "exitDescription": "A path leads north." }, "east": { "to": "edge_south", "exitDescription": "A path leads east." } },
+    "items": [],
+    "lookDescriptions": { "ferns": "Lush ferns grow in the damp soil." }
+  },
+  {
+    "id": "edge_south",
+    "name": "South Edge",
+    "description": "The southern edge of the clearing, warm and bright.",
+    "skyDescription": "The sky is wide and blue to the south.",
+    "x": 1,
+    "y": 2,
+    "exits": { "north": { "to": "forest_clearing", "exitDescription": "A path leads north." }, "east": { "to": "corner_se", "exitDescription": "A path leads east." }, "west": { "to": "corner_sw", "exitDescription": "A path leads west." } },
+    "items": [],
+    "lookDescriptions": { "warmth": "The sun warms your face." }
+  },
+  {
+    "id": "corner_se",
+    "name": "SE Corner",
+    "description": "A sunny, grassy corner of the woods.",
+    "skyDescription": "The sky is bright and open.",
+    "x": 2,
+    "y": 2,
+    "exits": { "north": { "to": "river_bank", "exitDescription": "A path leads north to the river bank." }, "west": { "to": "edge_south", "exitDescription": "A path leads west." } },
+    "items": [],
+    "lookDescriptions": { "grass": "Soft grass grows thickly here." }
+  },
+  {
     "id": "deep_forest",
     "name": "Deep Forest",
     "description": "Tall trees block out most of the light. The air is cool and damp.",
     "skyDescription": "You can barely see the sky through the thick canopy.",
+    "x": 1,
+    "y": 0,
     "exits": {
       "south": {
         "to": "forest_clearing",
@@ -43,6 +98,8 @@
     "name": "River Bank",
     "description": "You stand on the muddy bank of a gently flowing river. The water sparkles in the sunlight.",
     "skyDescription": "A few wispy clouds drift across the blue sky above the river.",
+    "x": 2,
+    "y": 1,
     "exits": {
       "west": {
         "to": "forest_clearing",

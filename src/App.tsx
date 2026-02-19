@@ -1,9 +1,12 @@
 import './App.css';
+import './components/PlayerOptionsBar.css';
 
 import { useState, useEffect } from 'react';
 import GameWindow from './components/GameWindow';
 import CommandInput from './components/CommandInput';
-import Compass from './components/Compass';
+
+import CompassFloat from './components/CompassFloat';
+import AsciiMap from './components/AsciiMap';
 
 import { rooms } from './engine/rooms';
 import type { Room } from './engine/rooms';
@@ -16,6 +19,10 @@ const App: React.FC = () => {
     currentRoom.description
   ]);
   const [theme, setTheme] = useState<'default' | 'amber' | 'green'>('default');
+  // Floating compass state
+  const [showCompass, setShowCompass] = useState(true);
+  // ASCII map toggle state
+  const [showMap, setShowMap] = useState(true);
 
   const handleCommand = (command: string) => {
     setOutput(prev => [...prev, `> ${command}`]);
@@ -93,6 +100,7 @@ const App: React.FC = () => {
 
   return (
     <div className="game-container">
+      {/* Theme Switcher */}
       <div className="theme-switcher">
         <button
           className={`theme-button${theme === 'default' ? ' selected' : ''}`}
@@ -113,13 +121,59 @@ const App: React.FC = () => {
           Apple II Green
         </button>
       </div>
+
+      {/* App Title */}
       <h1>TextQuest</h1>
-      {/* Compass UI above the game window */}
-      <Compass
-        exits={Object.keys(currentRoom.exits)}
-      />
-      <GameWindow output={output} />
-      <CommandInput onCommand={handleCommand} />
+
+      {/* Game Window and Command Input */}
+      <div style={{ position: 'relative', width: '100%' }}>
+        <GameWindow output={output} />
+        <CommandInput onCommand={handleCommand} />
+      </div>
+      
+      {/* Player Options Bar */}
+      <div className="player-options-bar">
+        <button
+          className={`theme-button${showCompass ? ' selected' : ''}`}
+          style={{ minWidth: 140 }}
+          onClick={() => setShowCompass(v => !v)}
+          aria-pressed={showCompass}
+        >
+          {showCompass ? 'Hide Compass' : 'Show Compass'}
+        </button>
+        <button
+          className={`theme-button${showMap ? ' selected' : ''}`}
+          style={{ minWidth: 140 }}
+          onClick={() => setShowMap(v => !v)}
+          aria-pressed={showMap}
+        >
+          {showMap ? 'Hide Map' : 'Show Map'}
+        </button>
+        {/* Add more player config buttons here in the future */}
+      </div>
+
+      {/* Floating Compass */}
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        {/* Floating Compass window, now near the game window */}
+        <div style={{ position: 'absolute', top: 0, right: 0 }}>
+          <CompassFloat
+            exits={Object.keys(currentRoom.exits)}
+            visible={showCompass}
+            onClose={() => setShowCompass(false)}
+          />
+        </div>
+      </div>
+
+      {/* ASCII Map */}
+      {showMap && (
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <AsciiMap
+            rooms={rooms}
+            currentRoomId={currentRoom.id}
+            size={3}
+          />
+        </div>
+      )}
     </div>
   );
 }

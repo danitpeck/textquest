@@ -4,7 +4,6 @@ interface GameWindowProps {
   output: string[];
 }
 
-
 const GameWindow: React.FC<GameWindowProps> = ({ output }) => {
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => {

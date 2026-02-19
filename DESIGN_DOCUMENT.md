@@ -92,13 +92,15 @@ Example (5x5, with upgrade):
 
 ## Retro ASCII Compass Design
 
-- The compass is displayed as a single horizontal line, with Up (U) and Down (D) exits shown between the player marker (*) and the East/West exits.
+- The compass is displayed with cardinal directions and the player marker (*) between the East/West exits.
 - Example (player at center, all directions available):
 
 ```
-NW       N        NE
-W <--D--(*)--U--> E
-SW       S        SE
+       N
+       |  U
+ W <--(*)--> E
+    D  |
+       S
 ```
 
 - N/S can be shown above/below, or as part of the minimap context.
