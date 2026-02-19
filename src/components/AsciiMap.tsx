@@ -51,29 +51,25 @@ const AsciiMap: React.FC<AsciiMapProps> = ({ rooms, currentRoomId, size = 3, the
             // Theme overrides
             if (theme === 'amber') {
               color = '#ffb300';
-              if (cell.description.toLowerCase().includes('river')) symbol = '=';
-              else if (cell.description.toLowerCase().includes('clearing')) symbol = '@';
-              else symbol = '*';
             } else if (theme === 'green') {
               color = '#8f8';
-              if (cell.description.toLowerCase().includes('river')) symbol = '-';
-              else if (cell.description.toLowerCase().includes('clearing')) symbol = 'O';
-              else symbol = '+';
             }
             const isCurrent = cell.id === currentRoomId;
+            let playerColor = '#e040fb'; // Fuchsia for Retro Dark
+            if (theme === 'amber') playerColor = '#ffb300';
+            else if (theme === 'green') playerColor = '#8f8';
             return (
               <span
                 key={x}
                 style={{
                   fontWeight: isCurrent ? 'bold' : undefined,
-                  color: isCurrent ? '#fff' : color,
-                  background: isCurrent ? '#345' : undefined,
+                  color: isCurrent ? playerColor : color,
                   borderRadius: isCurrent ? 3 : undefined,
                   padding: '0 2px',
                 }}
                 title={cell.name}
               >
-                {isCurrent ? 'P' : symbol}
+                {isCurrent ? '@' : symbol}
               </span>
             );
           })}
