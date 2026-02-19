@@ -6,7 +6,10 @@
     "skyDescription": "The sky is barely visible through the branches.",
     "x": 0,
     "y": 0,
-    "exits": { "east": { "to": "deep_forest", "exitDescription": "A faint trail leads east into the deep forest." }, "south": { "to": "edge_west", "exitDescription": "A path heads south." } },
+    "exits": { 
+        "east": { "to": "deep_forest", "exitDescription": "A faint trail leads east into the deep forest." }, 
+        "south": { "to": "edge_west", "exitDescription": "A path heads south." } 
+    },
     "items": [],
     "lookDescriptions": { "moss": "Thick moss covers the ground." }
   },
@@ -17,7 +20,11 @@
     "skyDescription": "Filtered sunlight streams through the trees.",
     "x": 0,
     "y": 1,
-    "exits": { "north": { "to": "corner_nw", "exitDescription": "A path heads north." }, "east": { "to": "forest_clearing", "exitDescription": "A path leads east." }, "south": { "to": "corner_sw", "exitDescription": "A path leads south." } },
+    "exits": { 
+        "north": { "to": "corner_nw", "exitDescription": "A path heads north." }, 
+        "east": { "to": "forest_clearing", "exitDescription": "A path leads east." }, 
+        "south": { "to": "corner_sw", "exitDescription": "A path leads south." } 
+    },
     "items": [],
     "lookDescriptions": { "shade": "The shade is deep and cool." }
   },
@@ -48,7 +55,10 @@
     "skyDescription": "The sky is hidden by thick branches.",
     "x": 0,
     "y": 2,
-    "exits": { "north": { "to": "edge_west", "exitDescription": "A path leads north." }, "east": { "to": "edge_south", "exitDescription": "A path leads east." } },
+    "exits": { 
+        "north": { "to": "edge_west", "exitDescription": "A path leads north." }, 
+        "east": { "to": "edge_south", "exitDescription": "A path leads east." } 
+    },
     "items": [],
     "lookDescriptions": { "ferns": "Lush ferns grow in the damp soil." }
   },
@@ -59,7 +69,11 @@
     "skyDescription": "The sky is wide and blue to the south.",
     "x": 1,
     "y": 2,
-    "exits": { "north": { "to": "forest_clearing", "exitDescription": "A path leads north." }, "east": { "to": "corner_se", "exitDescription": "A path leads east." }, "west": { "to": "corner_sw", "exitDescription": "A path leads west." } },
+    "exits": { 
+        "north": { "to": "forest_clearing", "exitDescription": "A path leads north." }, 
+        "east": { "to": "corner_se", "exitDescription": "A path leads east." }, 
+        "west": { "to": "corner_sw", "exitDescription": "A path leads west." }
+    },
     "items": [],
     "lookDescriptions": { "warmth": "The sun warms your face." }
   },
@@ -70,7 +84,10 @@
     "skyDescription": "The sky is bright and open.",
     "x": 2,
     "y": 2,
-    "exits": { "north": { "to": "river_bank", "exitDescription": "A path leads north to the river bank." }, "west": { "to": "edge_south", "exitDescription": "A path leads west." } },
+    "exits": { 
+        "north": { "to": "river_bank", "exitDescription": "A path leads north to the river bank." }, 
+        "west": { "to": "edge_south", "exitDescription": "A path leads west." } 
+    },
     "items": [],
     "lookDescriptions": { "grass": "Soft grass grows thickly here." }
   },
@@ -85,6 +102,10 @@
       "south": {
         "to": "forest_clearing",
         "exitDescription": "You see sunlight to the south."
+      },
+      "west": {
+        "to": "corner_nw",
+        "exitDescription": "A narrow path leads west toward a mossy corner."
       }
     },
     "items": [],
@@ -104,6 +125,10 @@
       "west": {
         "to": "forest_clearing",
         "exitDescription": "The forest clearing is visible through the trees to the west."
+      },
+      "south": {
+        "to": "corner_se",
+        "exitDescription": "A narrow path leads south to a sunny, grassy corner."
       }
     },
     "items": ["smooth_pebble", "reeds"],

@@ -16,7 +16,13 @@ const App: React.FC = () => {
   // Start in the first room from the data
   const [currentRoom, setCurrentRoom] = useState<Room>(rooms[0]);
   const [output, setOutput] = useState<string[]>([
-    currentRoom.description
+    currentRoom.description,
+    (() => {
+      const exitList = Object.entries(currentRoom.exits)
+        .map(([dir]) => dir.charAt(0).toUpperCase() + dir.slice(1))
+        .join(', ');
+      return exitList ? `(Exits: ${exitList})` : '(No visible exits)';
+    })()
   ]);
   const [theme, setTheme] = useState<'default' | 'amber' | 'green'>('default');
   // Floating compass state
@@ -73,7 +79,14 @@ const App: React.FC = () => {
         const nextRoom = rooms.find(r => r.id === exit.to);
         if (nextRoom) {
           setCurrentRoom(nextRoom);
-          setOutput(prev => [...prev, nextRoom.description]);
+          const exitList = Object.entries(nextRoom.exits)
+            .map(([dir]) => dir.charAt(0).toUpperCase() + dir.slice(1))
+            .join(', ');
+          setOutput(prev => [
+            ...prev,
+            nextRoom.description,
+            exitList ? `(Exits: ${exitList})` : '(No visible exits)'
+          ]);
         } else {
           setOutput(prev => [...prev, "You can't go that way."]);
         }
