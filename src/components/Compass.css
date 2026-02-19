@@ -1,0 +1,41 @@
+.compass-root {
+  text-align: center;
+  margin: 0 0 1rem 0;
+  font-family: 'Fira Mono', Consolas, monospace;
+  color: var(--text-main, #ffe7b3);
+  background: var(--bg-panel, #232323);
+  border: 1px solid var(--accent, #b36a00);
+  border-radius: 6px;
+  padding: 0.5em 0;
+  display: inline-block;
+  min-width: 260px;
+  font-size: 1.1em;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+}
+
+.compass-dir {
+  font-weight: normal;
+  color: var(--text-main, #b3b3b3);
+  opacity: 0.3;
+  font-family: inherit;
+  user-select: none;
+}
+.compass-dir--active {
+  font-weight: bold;
+  color: var(--text-heading, #ffb300);
+  opacity: 1;
+}
+.compass-dir--hidden {
+  visibility: hidden;
+}
+.compass-center {
+  font-weight: bold;
+  color: var(--text-heading, #ffb300);
+  font-family: inherit;
+  user-select: none;
+}
+.compass-char {
+  font-family: inherit;
+  user-select: none;
+}
