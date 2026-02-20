@@ -370,13 +370,22 @@ const App: React.FC = () => {
     let exit = dir ? currentRoom.exits[dir] : null;
     let matchedDirection = dir || '';
     
-    // If not found via parseMovement, check if any word in the command matches an exit name directly
+    // If not found via parseMovement, check if any word in the command matches an exit name directly or via alias
     if (!exit) {
       const words = cmd.trim().toLowerCase().split(/\s+/);
       for (const word of words) {
+        // Try direct exit name match first
         if (currentRoom.exits[word]) {
           exit = currentRoom.exits[word];
           matchedDirection = word;
+          break;
+        }
+        // Try alias match
+        const found = findExitByTarget(currentRoom.exits, word);
+        if (found) {
+          const [foundDirection, foundExit] = found;
+          exit = foundExit;
+          matchedDirection = foundDirection;
           break;
         }
       }
