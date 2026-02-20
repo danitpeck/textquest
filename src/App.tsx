@@ -391,8 +391,9 @@ const App: React.FC = () => {
       if (!item) {
         const roomItems = getItemsByIds(currentRoom.items);
         for (const roomItem of roomItems) {
-          if (roomItem.canOpen && openItems.has(roomItem.id) && roomItem.contents) {
-            const containerItem = findItemByNameOrPrefix(roomItem.contents, get.target);
+          if (roomItem.canOpen && openItems.has(roomItem.id)) {
+            const contents = containerContents[roomItem.id] || roomItem.contents || [];
+            const containerItem = findItemByNameOrPrefix(contents, get.target);
             if (containerItem) {
               item = containerItem;
               fromContainer = roomItem;
