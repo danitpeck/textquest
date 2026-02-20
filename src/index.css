@@ -45,7 +45,7 @@ body,
   --accent-hover: #a65c00;
   --scrollbar-thumb: #b36a00;
   --scrollbar-track: #1a1200;
-  --button-text: #fffbe6;
+  --button-text: #1a1200;
   --border-ui: #ffb300;
 }
 
@@ -58,6 +58,6 @@ body,
   --accent-hover: #2ecc10;
   --scrollbar-thumb: #39ff14;
   --scrollbar-track: #0a1a0a;
-  --button-text: #eaffea;
+  --button-text: #0a1a0a;
   --border-ui: #8f8;
 }

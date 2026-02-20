@@ -29,7 +29,7 @@ export function parseLook(command: string): { type: 'look', target?: string } | 
 }
 
 // ============ EXAMINE COMMAND ============
-export const examineSynonyms = ['examine', 'study', 'inspect', 'investigate', 'ex', 'x', 'exa', 'exam', 'exami'];
+export const examineSynonyms = ['examine', 'study', 'inspect', 'investigate', 'ex', 'exa', 'exam', 'exami'];
 
 export function parseExamine(command: string): { type: 'examine', target: string } | null {
   const words = command.trim().toLowerCase().split(/\s+/);
