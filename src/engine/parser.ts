@@ -94,7 +94,27 @@ export function parseClose(command: string): { type: 'close', target: string } |
   return null;
 }
 
-// ============ MOVEMENT COMMAND ============
+// ============ PUT/PLACE IN CONTAINER COMMAND ============
+export const putSynonyms = ['put', 'place', 'set', 'stow', 'store'];
+
+export function parsePut(command: string): { type: 'put', item: string, container: string } | null {
+  const words = command.trim().toLowerCase().split(/\s+/);
+  if (putSynonyms.includes(words[0])) {
+    if (words.length < 2) return null;
+    
+    // Find 'in' or 'inside' in the command
+    const inIndex = words.findIndex(w => w === 'in' || w === 'inside');
+    if (inIndex === -1 || inIndex === 0) return null;
+    
+    const item = words.slice(1, inIndex).join(' ');
+    const container = words.slice(inIndex + 1).join(' ');
+    
+    return item && container ? { type: 'put', item, container } : null;
+  }
+  return null;
+}
+
+
 const movementVerbs = [
   'go', 'walk', 'move', 'head', 'run', 'travel', 'proceed', 'step', 'enter', 'leave'
 ];

@@ -9,7 +9,7 @@ import PlayerStats from './components/PlayerStats';
 
 import { rooms } from './engine/rooms';
 import type { Room } from './engine/rooms';
-import { parseMovement, parseLook, parseExamine, parseGet, parseDrop, parseOpen, parseClose } from './engine/parser';
+import { parseMovement, parseLook, parseExamine, parseGet, parseDrop, parseOpen, parseClose, parsePut } from './engine/parser';
 import { createPlayer, getDescriptionTier, canAddToInventory } from './engine/player';
 import type { Player } from './engine/player';
 import { getItemsByIds, formatItemsInRoom } from './engine/items';
@@ -43,6 +43,10 @@ const App: React.FC = () => {
   const [player, setPlayer] = useState<Player>(createPlayer(rooms[0].id));
   const [openItems, setOpenItems] = useState<Set<string>>(new Set());
   const [openDoors, setOpenDoors] = useState<Set<string>>(new Set());
+  const [containerContents, setContainerContents] = useState<Record<string, string[]>>({
+    // Initialize with base contents from items.ts
+    'wooden_chest': ['copper_knife']
+  });
   const [output, setOutput] = useState<string[]>(() => {
     const lines = [currentRoom.description];
     const itemsLine = formatItemsInRoom(currentRoom.items);
@@ -152,8 +156,9 @@ const App: React.FC = () => {
         // Mark item as open in state
         setOpenItems(prev => new Set([...prev, roomItem.id]));
         setOutput(prev => [...prev, `You open the ${roomItem.name}.`]);
-        if (roomItem.contents && roomItem.contents.length > 0) {
-          const items = getItemsByIds(roomItem.contents);
+        const contents = containerContents[roomItem.id] || roomItem.contents || [];
+        if (contents.length > 0) {
+          const items = getItemsByIds(contents);
           const itemNames = items.map(i => i.name).join(', ');
           setOutput(prev => [...prev, `Inside you find: ${itemNames}.`]);
         }
@@ -176,8 +181,9 @@ const App: React.FC = () => {
         // Mark item as open in state
         setOpenItems(prev => new Set([...prev, invItem.id]));
         setOutput(prev => [...prev, `You open the ${invItem.name}.`]);
-        if (invItem.contents && invItem.contents.length > 0) {
-          const items = getItemsByIds(invItem.contents);
+        const contents = containerContents[invItem.id] || invItem.contents || [];
+        if (contents.length > 0) {
+          const items = getItemsByIds(contents);
           const itemNames = items.map(i => i.name).join(', ');
           setOutput(prev => [...prev, `Inside you find: ${itemNames}.`]);
         }
@@ -304,6 +310,17 @@ const App: React.FC = () => {
         
         // Build complete output message
         const outputLines = [desc];
+        
+        // Show contents if this is an open container
+        if (item.canOpen && openItems.has(item.id)) {
+          const contents = containerContents[item.id] || item.contents || [];
+          if (contents.length > 0) {
+            const contentItems = getItemsByIds(contents);
+            const itemNames = contentItems.map(i => i.name).join(', ');
+            outputLines.push(`Inside: ${itemNames}`);
+          }
+        }
+        
         if (skillIncreased) {
           outputLines.push(`[Your examine skill has improved to level ${newSkillLevel}!]`);
         }
@@ -332,6 +349,17 @@ const App: React.FC = () => {
         
         // Build complete output message
         const outputLines = [desc];
+        
+        // Show contents if this is an open container
+        if (item.canOpen && openItems.has(item.id)) {
+          const contents = containerContents[item.id] || item.contents || [];
+          if (contents.length > 0) {
+            const contentItems = getItemsByIds(contents);
+            const itemNames = contentItems.map(i => i.name).join(', ');
+            outputLines.push(`Inside: ${itemNames}`);
+          }
+        }
+        
         if (skillIncreased) {
           outputLines.push(`[Your examine skill has improved to level ${newSkillLevel}!]`);
         }
@@ -355,7 +383,24 @@ const App: React.FC = () => {
     // Get/Take parser
     const get = parseGet(cmd);
     if (get) {
-      const item = findItemByNameOrPrefix(currentRoom.items, get.target);
+      // First try room items directly
+      let item = findItemByNameOrPrefix(currentRoom.items, get.target);
+      let fromContainer: typeof item | null = null;
+
+      // If not found, search open containers in the room
+      if (!item) {
+        const roomItems = getItemsByIds(currentRoom.items);
+        for (const roomItem of roomItems) {
+          if (roomItem.canOpen && openItems.has(roomItem.id) && roomItem.contents) {
+            const containerItem = findItemByNameOrPrefix(roomItem.contents, get.target);
+            if (containerItem) {
+              item = containerItem;
+              fromContainer = roomItem;
+              break;
+            }
+          }
+        }
+      }
 
       if (!item) {
         setOutput(prev => [...prev, "You can't get that."]);
@@ -372,16 +417,30 @@ const App: React.FC = () => {
         return;
       }
 
-      // Remove from room, add to inventory
-      setCurrentRoom(prev => ({
-        ...prev,
-        items: prev.items.filter(id => id !== item.id)
-      }));
-      setPlayer(prev => ({
-        ...prev,
-        inventory: [...prev.inventory, item.id]
-      }));
-      setOutput(prev => [...prev, `You take the ${item.name}.`]);
+      // Remove from room or container, add to inventory
+      if (fromContainer) {
+        // Taking from open container
+        setContainerContents(prev => ({
+          ...prev,
+          [fromContainer.id]: (prev[fromContainer.id] || fromContainer.contents || []).filter(id => id !== item.id)
+        }));
+        setPlayer(prev => ({
+          ...prev,
+          inventory: [...prev.inventory, item.id]
+        }));
+        setOutput(prev => [...prev, `You take the ${item.name} from the ${fromContainer.name}.`]);
+      } else {
+        // Taking from room directly
+        setCurrentRoom(prev => ({
+          ...prev,
+          items: prev.items.filter(id => id !== item.id)
+        }));
+        setPlayer(prev => ({
+          ...prev,
+          inventory: [...prev.inventory, item.id]
+        }));
+        setOutput(prev => [...prev, `You take the ${item.name}.`]);
+      }
       return;
     }
 
@@ -405,6 +464,54 @@ const App: React.FC = () => {
         items: [...prev.items, item.id]
       }));
       setOutput(prev => [...prev, `You drop the ${item.name}.`]);
+      return;
+    }
+
+    // Put in container parser
+    const put = parsePut(cmd);
+    if (put) {
+      // Find item in inventory
+      const item = findItemByNameOrPrefix(player.inventory, put.item);
+      if (!item) {
+        setOutput(prev => [...prev, "You don't have that."]);
+        return;
+      }
+
+      // Can't put containers in containers
+      if (item.canOpen) {
+        setOutput(prev => [...prev, "You can't put containers in containers."]);
+        return;
+      }
+
+      // Find container in room
+      let container = findItemByNameOrPrefix(currentRoom.items, put.container);
+      if (!container) {
+        setOutput(prev => [...prev, "That container isn't here."]);
+        return;
+      }
+
+      // Check if it's a valid container
+      if (!container.canOpen) {
+        setOutput(prev => [...prev, "That's not a container."]);
+        return;
+      }
+
+      // Check if container is open
+      if (!openItems.has(container.id)) {
+        setOutput(prev => [...prev, "That container is closed."]);
+        return;
+      }
+
+      // Remove from inventory, add to container
+      setPlayer(prev => ({
+        ...prev,
+        inventory: prev.inventory.filter(id => id !== item.id)
+      }));
+      setContainerContents(prev => ({
+        ...prev,
+        [container.id]: [...(prev[container.id] || container.contents || []), item.id]
+      }));
+      setOutput(prev => [...prev, `You put the ${item.name} in the ${container.name}.`]);
       return;
     }
 
