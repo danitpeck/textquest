@@ -48,7 +48,7 @@ const App: React.FC = () => {
     // Initialize with base contents from items.ts
     'wooden_chest': ['copper_knife']
   });
-  const [currentSaveSlot, setCurrentSaveSlot] = useState<1 | 2 | 3>(2);
+  const [currentSaveSlot, setCurrentSaveSlot] = useState<1 | 2 | 3>(1);
   const [showLoadMenu, setShowLoadMenu] = useState(false);
   const [output, setOutput] = useState<string[]>(() => {
     const lines = [currentRoom.description];
