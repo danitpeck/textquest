@@ -16,6 +16,11 @@ export function parseLook(command: string): { type: 'look', target?: string } | 
   if (lookSynonyms.includes(words[0])) {
     if (words.length === 1) return { type: 'look' };
     if (words[1] === 'sky') return { type: 'look', target: 'sky' };
+    // look in <container> syntax
+    if (words[1] === 'in') {
+      const containerName = words.slice(2).join(' ');
+      return containerName ? { type: 'look', target: `in ${containerName}` } : { type: 'look' };
+    }
     // look <direction>
     const dir = directionSynonyms[words[1]] || words[1];
     return { type: 'look', target: dir };
@@ -24,7 +29,7 @@ export function parseLook(command: string): { type: 'look', target?: string } | 
 }
 
 // ============ EXAMINE COMMAND ============
-export const examineSynonyms = ['examine', 'study', 'inspect', 'investigate', 'ex', 'x'];
+export const examineSynonyms = ['examine', 'study', 'inspect', 'investigate', 'ex', 'x', 'exa', 'exam', 'exami'];
 
 export function parseExamine(command: string): { type: 'examine', target: string } | null {
   const words = command.trim().toLowerCase().split(/\s+/);
@@ -148,6 +153,21 @@ export function parseLoad(command: string): { type: 'load'; slotNumber?: 1 | 2 |
       return { type: 'load', slotNumber: slotNum as 1 | 2 | 3 };
     }
     return { type: 'load' };
+  }
+  return null;
+}
+
+// ============ CLEAR COMMAND ============
+export function parseClear(command: string): { type: 'clear'; slotNumber?: 1 | 2 | 3 } | null {
+  const words = command.trim().toLowerCase().split(/\s+/);
+  if (words[0] === 'clear') {
+    // "clear slot 1", "clear 1", or just "clear" for current slot
+    const lastWord = words[words.length - 1];
+    const slotNum = parseInt(lastWord, 10);
+    if (slotNum >= 1 && slotNum <= 3) {
+      return { type: 'clear', slotNumber: slotNum as 1 | 2 | 3 };
+    }
+    return { type: 'clear' };
   }
   return null;
 }

@@ -9,7 +9,7 @@ import PlayerStats from './components/PlayerStats';
 
 import { rooms } from './engine/rooms';
 import type { Room } from './engine/rooms';
-import { parseMovement, parseLook, parseExamine, parseGet, parseDrop, parseOpen, parseClose, parsePut, parseSave, parseLoad } from './engine/parser';
+import { parseMovement, parseLook, parseExamine, parseGet, parseDrop, parseOpen, parseClose, parsePut, parseSave, parseLoad, parseClear } from './engine/parser';
 import { createPlayer, getDescriptionTier, canAddToInventory } from './engine/player';
 import type { Player } from './engine/player';
 import { getItemsByIds, formatItemsInRoom } from './engine/items';
@@ -93,10 +93,52 @@ const App: React.FC = () => {
         }
         return;
       }
-      // look <thing> (custom look descriptions)
+      // look in <container> - show contents
+      if (look.target.startsWith('in ')) {
+        const containerName = look.target.slice(3);
+        const container = findItemByNameOrPrefix(currentRoom.items, containerName);
+        if (container && container.canOpen) {
+          if (openItems.has(container.id)) {
+            const contents = containerContents[container.id] || container.contents || [];
+            if (contents.length === 0) {
+              setOutput(prev => [...prev, `The ${container.name} is open but empty.`]);
+            } else {
+              const itemList = getItemsByIds(contents).map(i => i.name).join(', ');
+              setOutput(prev => [...prev, `Inside the ${container.name}: ${itemList}`]);
+            }
+          } else {
+            setOutput(prev => [...prev, `The ${container.name} is closed.`]);
+          }
+        } else {
+          setOutput(prev => [...prev, "You don't see that here."]);
+        }
+        return;
+      }
+      // look <thing> (custom look descriptions) - but also show container contents if open
+      const lookingAt = findItemByNameOrPrefix(currentRoom.items, look.target);
       if (currentRoom.lookDescriptions && currentRoom.lookDescriptions[look.target]) {
         const desc = currentRoom.lookDescriptions[look.target];
         setOutput(prev => [...prev, desc ?? "You see nothing special."]);
+        // If it's an open container, also show contents
+        if (lookingAt && lookingAt.canOpen && openItems.has(lookingAt.id)) {
+          const contents = containerContents[lookingAt.id] || lookingAt.contents || [];
+          if (contents.length > 0) {
+            const itemList = getItemsByIds(contents).map(i => i.name).join(', ');
+            setOutput(prev => [...prev, `Inside: ${itemList}`]);
+          }
+        }
+        return;
+      }
+      // If looking at an open container without custom description, show contents
+      if (lookingAt && lookingAt.canOpen && openItems.has(lookingAt.id)) {
+        const desc = lookingAt.descriptions[0] || lookingAt.name;
+        const contents = containerContents[lookingAt.id] || lookingAt.contents || [];
+        if (contents.length === 0) {
+          setOutput(prev => [...prev, `${desc} It's open but empty.`]);
+        } else {
+          const itemList = getItemsByIds(contents).map(i => i.name).join(', ');
+          setOutput(prev => [...prev, `${desc} Inside: ${itemList}`]);
+        }
         return;
       }
       // look <direction>
@@ -574,6 +616,15 @@ const App: React.FC = () => {
         // Show load menu
         setShowLoadMenu(true);
       }
+      return;
+    }
+
+    // Clear save slot parser
+    const clear = parseClear(cmd);
+    if (clear) {
+      const targetSlot = clear.slotNumber || currentSaveSlot;
+      saveSystem.deleteSlot(targetSlot);
+      setOutput(prev => [...prev, `Slot ${targetSlot} has been cleared.`]);
       return;
     }
 
