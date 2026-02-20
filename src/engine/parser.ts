@@ -63,7 +63,7 @@ export function parseGet(command: string): { type: 'get', target: string } | nul
 }
 
 // ============ DROP COMMAND ============
-export const dropSynonyms = ['drop', 'leave', 'put', 'set', 'place', 'throw'];
+export const dropSynonyms = ['drop', 'leave', 'set', 'place', 'throw'];
 
 export function parseDrop(command: string): { type: 'drop', target: string } | null {
   const words = command.trim().toLowerCase().split(/\s+/);
