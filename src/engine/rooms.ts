@@ -1,4 +1,5 @@
 import roomsData from '../data/rooms.json';
+import testingGroundData from '../data/testingGround.json';
 
 export interface RoomExit {
   to: string;
@@ -68,3 +69,4 @@ function validateRoom(raw: unknown): Room {
 }
 
 export const rooms: Room[] = (roomsData as unknown[]).map(validateRoom);
+export const testingGroundRooms: Room[] = (testingGroundData as unknown[]).map(validateRoom);

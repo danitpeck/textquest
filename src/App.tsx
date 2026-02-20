@@ -7,9 +7,9 @@ import Compass from './components/Compass';
 import AsciiMap from './components/AsciiMap';
 import PlayerStats from './components/PlayerStats';
 
-import { rooms } from './engine/rooms';
+import { rooms, testingGroundRooms } from './engine/rooms';
 import type { Room } from './engine/rooms';
-import { parseMovement, parseLook, parseExamine, parseGet, parseDrop, parseOpen, parseClose, parsePut, parseSave, parseLoad, parseClear } from './engine/parser';
+import { parseMovement, parseLook, parseExamine, parseGet, parseDrop, parseOpen, parseClose, parsePut, parseSave, parseLoad, parseClear, parseDebugTeleport } from './engine/parser';
 import { createPlayer, getDescriptionTier, canAddToInventory } from './engine/player';
 import type { Player } from './engine/player';
 import { getItemsByIds, formatItemsInRoom } from './engine/items';
@@ -625,6 +625,26 @@ const App: React.FC = () => {
       const targetSlot = clear.slotNumber || currentSaveSlot;
       saveSystem.deleteSlot(targetSlot);
       setOutput(prev => [...prev, `Slot ${targetSlot} has been cleared.`]);
+      return;
+    }
+
+    // Debug teleport (development only)
+    const debugTeleport = parseDebugTeleport(cmd);
+    if (debugTeleport) {
+      if (testingGroundRooms.length > 0) {
+        const testRoom = testingGroundRooms[0];
+        setCurrentRoom(testRoom);
+        const outputLines = [`[DEBUG] Teleported to ${testRoom.name}`, testRoom.description];
+        const itemsLine = formatItemsInRoom(testRoom.items);
+        if (itemsLine) outputLines.push(itemsLine);
+        const exitList = Object.entries(testRoom.exits)
+          .map(([dir]) => dir.charAt(0).toUpperCase() + dir.slice(1))
+          .join(', ');
+        outputLines.push(exitList ? `(Exits: ${exitList})` : '(No visible exits)');
+        setOutput(prev => [...prev, ...outputLines]);
+      } else {
+        setOutput(prev => [...prev, '[DEBUG] Testing ground not available.']);
+      }
       return;
     }
 

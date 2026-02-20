@@ -172,6 +172,15 @@ export function parseClear(command: string): { type: 'clear'; slotNumber?: 1 | 2
   return null;
 }
 
+// ============ DEBUG TELEPORT COMMAND (DEVELOPMENT ONLY) ============
+export function parseDebugTeleport(command: string): { type: 'debug_teleport' } | null {
+  const cmd = command.trim().toLowerCase();
+  if (cmd === 'testground' || cmd === 'test ground' || cmd === 'testing ground' || cmd === 'debug test') {
+    return { type: 'debug_teleport' };
+  }
+  return null;
+}
+
 const movementVerbs = [
   'go', 'walk', 'move', 'head', 'run', 'travel', 'proceed', 'step', 'enter', 'leave'
 ];
