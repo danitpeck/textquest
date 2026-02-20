@@ -4,6 +4,8 @@
  * Items can be taken, opened, or placed in containers
  */
 
+import itemsData from '../data/items.json';
+
 export interface ActivityEffect {
   message: string;              // What player sees
   puzzleId?: string;            // Puzzle identifier to mark as solved
@@ -29,8 +31,67 @@ export interface GameItem {
   pullEffect?: ActivityEffect;
 }
 
+interface RawItem {
+  id?: unknown;
+  name?: unknown;
+  aliases?: unknown;
+  descriptions?: unknown;
+  canOpen?: unknown;
+  isOpen?: unknown;
+  contents?: unknown;
+  canTake?: unknown;
+  weight?: unknown;
+  turnDescription?: unknown;
+  turnEffect?: unknown;
+  pushDescription?: unknown;
+  pushEffect?: unknown;
+  pullDescription?: unknown;
+  pullEffect?: unknown;
+}
+
+function validateItem(raw: unknown): GameItem {
+  if (typeof raw !== 'object' || !raw) throw new Error('Invalid item');
+  const itemObj = raw as RawItem;
+  
+  // Validate required fields
+  const id = String(itemObj.id || '');
+  if (!id) throw new Error('Item must have an id');
+  
+  const name = String(itemObj.name || '');
+  if (!name) throw new Error('Item must have a name');
+  
+  if (!Array.isArray(itemObj.aliases)) throw new Error('Item must have aliases array');
+  const aliases = (itemObj.aliases as unknown[]).map(String);
+  
+  if (!Array.isArray(itemObj.descriptions)) throw new Error('Item must have descriptions array');
+  const descriptions = (itemObj.descriptions as unknown[]).map(String);
+  
+  const canTake = typeof itemObj.canTake === 'boolean' ? itemObj.canTake : false;
+  
+  return {
+    id,
+    name,
+    aliases,
+    descriptions,
+    canTake,
+    canOpen: typeof itemObj.canOpen === 'boolean' ? itemObj.canOpen : undefined,
+    isOpen: typeof itemObj.isOpen === 'boolean' ? itemObj.isOpen : undefined,
+    contents: Array.isArray(itemObj.contents) ? (itemObj.contents as unknown[]).map(String) : undefined,
+    weight: typeof itemObj.weight === 'number' ? itemObj.weight : undefined,
+    turnDescription: itemObj.turnDescription ? String(itemObj.turnDescription) : undefined,
+    turnEffect: itemObj.turnEffect && typeof itemObj.turnEffect === 'object' ? itemObj.turnEffect as ActivityEffect : undefined,
+    pushDescription: itemObj.pushDescription ? String(itemObj.pushDescription) : undefined,
+    pushEffect: itemObj.pushEffect && typeof itemObj.pushEffect === 'object' ? itemObj.pushEffect as ActivityEffect : undefined,
+    pullDescription: itemObj.pullDescription ? String(itemObj.pullDescription) : undefined,
+    pullEffect: itemObj.pullEffect && typeof itemObj.pullEffect === 'object' ? itemObj.pullEffect as ActivityEffect : undefined,
+  };
+}
+
+// Load items from JSON
+const loadedItems = (itemsData as unknown[]).map(validateItem);
+
 /**
- * Items database - all items indexed by ID
+ * Items database - all items indexed by ID, loaded from items.json
  */
 export const itemsDatabase: Record<string, GameItem> = {
   // Forest clearing items
@@ -138,24 +199,9 @@ export const itemsDatabase: Record<string, GameItem> = {
     canTake: true,
     weight: 0.05,
   },
-  'massive_clay_pots': {
-    id: 'massive_clay_pots',
-    name: 'massive clay pots',
-    aliases: ['massive clay pots', 'pots', 'clay pots', 'clay pot'],
-    descriptions: [
-      'Massive clay pots arranged in a precise pattern, covered in ancient carvings.',
-      'These enormous clay vessels are arranged in what appears to be a ritualistic pattern. The surface is covered in intricate carvings depicting scenes of harvest and plenty.',
-      'Ancient pottery of exceptional craftsmanship. Each pot stands as tall as you, and together they form a perfect geometric arrangement. The carvings tell a story of an ancient civilization.',
-    ],
-    canTake: false,
-    weight: 1000.0,
-    turnDescription: 'You carefully turn the massive clay pots, and they rotate with surprising ease. The ancient mechanism beneath them grinds to life...',
-    turnEffect: {
-      message: 'A hidden door opens, revealing a secret passage to the north!',
-      puzzleId: 'potsPuzzle',
-      revealExit: 'north',
-    },
-  },
+  
+  // Items loaded from items.json
+  ...Object.fromEntries(loadedItems.map(item => [item.id, item])),
 };
 
 /**
