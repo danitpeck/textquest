@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import styles from './GameWindow.module.css';
 
 interface GameWindowProps {
   output: string[];
@@ -11,8 +12,8 @@ const GameWindow: React.FC<GameWindowProps> = ({ output }) => {
       endRef.current.scrollIntoView({ behavior: 'auto' });
     }
   }, [output]);
-  return (
-    <div className="game-window">
+    return (
+      <div className={styles.gameWindow}>
       {output.map((line, idx) => (
         <div key={idx}>{line}</div>
       ))}

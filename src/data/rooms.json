@@ -10,7 +10,7 @@
         "east": { "to": "deep_forest", "exitDescription": "A faint trail leads east into the deep forest." }, 
         "south": { "to": "edge_west", "exitDescription": "A path heads south." } 
     },
-    "items": [],
+    "items": ["wooden_chest"],
     "lookDescriptions": { "moss": "Thick moss covers the ground." }
   },
   {
@@ -25,7 +25,7 @@
         "east": { "to": "forest_clearing", "exitDescription": "A path leads east." }, 
         "south": { "to": "corner_sw", "exitDescription": "A path leads south." } 
     },
-    "items": [],
+    "items": ["glass_vial"],
     "lookDescriptions": { "shade": "The shade is deep and cool." }
   },
   {
@@ -99,6 +99,11 @@
     "x": 1,
     "y": 0,
     "exits": {
+      "north": {
+        "to": "forest_cabin",
+        "exitDescription": "A narrow path leads north, and you can make out the outline of a small cabin.",
+        "isDoor": false
+      },
       "south": {
         "to": "forest_clearing",
         "exitDescription": "You see sunlight to the south."
@@ -108,10 +113,56 @@
         "exitDescription": "A narrow path leads west toward a mossy corner."
       }
     },
-    "items": [],
+    "items": ["parchment_scroll"],
     "lookDescriptions": {
       "trees": "The trees are tall and dense, blocking out most of the light.",
       "air": "The air is cool and damp."
+    }
+  },
+  {
+    "id": "forest_cabin",
+    "name": "Forest Cabin",
+    "description": "A small, weathered cabin stands alone in the clearing. The wooden door looks sturdy but old.",
+    "skyDescription": "The clearing above allows more sunlight through.",
+    "x": 1,
+    "y": -1,
+    "exits": {
+      "south": {
+        "to": "deep_forest",
+        "exitDescription": "The dark forest stretches back south."
+      },
+      "in": {
+        "to": "cabin_interior",
+        "exitDescription": "The cabin door leads inside.",
+        "isDoor": true,
+        "doorId": "cabin_entrance"
+      }
+    },
+    "items": [],
+    "lookDescriptions": {
+      "door": "An old wooden door, weathered gray by time.",
+      "cabin": "A modest log cabin, clearly abandoned long ago."
+    }
+  },
+  {
+    "id": "cabin_interior",
+    "name": "Cabin Interior",
+    "description": "Inside the cabin is a single room. Dust motes float in the light from a small window. A simple wooden table sits in one corner.",
+    "x": 1,
+    "y": -1,
+    "exits": {
+      "out": {
+        "to": "forest_cabin",
+        "exitDescription": "The cabin door leads back outside.",
+        "isDoor": true,
+        "doorId": "cabin_entrance"
+      }
+    },
+    "items": [],
+    "lookDescriptions": {
+      "table": "A simple wooden table, its surface scratched and stained.",
+      "window": "A small, dusty window that looks out toward the forest.",
+      "floor": "Wooden floorboards, worn smooth by footsteps long ago."
     }
   },
   {
@@ -131,7 +182,7 @@
         "exitDescription": "A narrow path leads south to a sunny, grassy corner."
       }
     },
-    "items": ["smooth_pebble", "reeds"],
+    "items": ["smooth_pebble", "reeds", "copper_knife"],
     "lookDescriptions": {
       "river": "The river flows gently, its surface sparkling in the sunlight.",
       "pebble": "A smooth, flat pebble lies at your feet.",

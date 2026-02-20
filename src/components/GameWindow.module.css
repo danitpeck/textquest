@@ -1,0 +1,33 @@
+.gameWindow {
+  background: var(--bg-main);
+  border-radius: 8px;
+  min-height: 120px;
+  max-height: 420px;
+  height: 340px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.2rem;
+  color: var(--text-main);
+  font-family: 'Fira Mono', Consolas, monospace;
+  font-size: 1.08rem;
+  text-align: left;
+  box-shadow: 0 1px 4px #0006;
+  word-break: break-word;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+.gameWindow::-webkit-scrollbar {
+  width: 10px;
+}
+
+.gameWindow::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 6px;
+  border: 2px solid var(--scrollbar-track);
+}
+
+.gameWindow::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 6px;
+}

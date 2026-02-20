@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import styles from './CommandInput.module.css';
 
 interface CommandInputProps {
   onCommand: (command: string) => void;
@@ -16,7 +17,7 @@ const CommandInput: React.FC<CommandInputProps> = ({ onCommand }) => {
   };
 
   return (
-    <form className="command-input" onSubmit={handleSubmit} autoComplete="off">
+    <form className={styles.commandInput} onSubmit={handleSubmit} autoComplete="off">
       <input
         type="text"
         value={input}

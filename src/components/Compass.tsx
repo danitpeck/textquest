@@ -1,5 +1,5 @@
 import React from 'react';
-import './Compass.css';
+import styles from './Compass.module.css';
 
 export type CompassDirection = 'n' | 's' | 'e' | 'w' | 'u' | 'd';
 
@@ -54,7 +54,11 @@ const Compass: React.FC<CompassProps> = ({ exits }) => {
         return (
           <span
             key={colIdx}
-            className={active ? 'compass-dir compass-dir--active' : 'compass-dir compass-dir--hidden'}
+            className={
+              active
+                ? `${styles.compassDir} ${styles.compassDirActive}`
+                : `${styles.compassDir} ${styles.compassDirHidden}`
+            }
           >
             {ch}
           </span>
@@ -65,19 +69,19 @@ const Compass: React.FC<CompassProps> = ({ exits }) => {
         return (
           <span
             key={colIdx}
-            className="compass-center"
+            className={styles.compassCenter}
           >
             {ch}
           </span>
         );
       }
       // Other characters (dashes, parens, etc)
-      return <span key={colIdx} className="compass-char">{ch}</span>;
+      return <span key={colIdx} className={styles.compassChar}>{ch}</span>;
     });
 
   return (
-    <div className="compass-root">
-      <pre style={{ margin: 0, padding: 0, display: 'inline-block', verticalAlign: 'middle' }}>
+    <div className={styles.compassRoot}>
+      <pre className={styles.compassPre}>
         {template.map((row, i) => (
           <React.Fragment key={i}>
             {renderRow(row, i)}

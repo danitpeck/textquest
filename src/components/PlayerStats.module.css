@@ -1,0 +1,20 @@
+.statsPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  border: 1px solid var(--border-ui);
+  border-radius: 0;
+  font-family: 'Fira Mono', Consolas, monospace;
+  font-size: 0.9rem;
+  background-color: var(--bg-panel);
+  color: var(--text-main);
+  margin-top: 1rem;
+}
+
+.statLine {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  white-space: nowrap;
+}

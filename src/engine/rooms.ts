@@ -3,6 +3,8 @@ import roomsData from '../data/rooms.json';
 export interface RoomExit {
   to: string;
   exitDescription?: string;
+  isDoor?: boolean;
+  doorId?: string;
 }
 
 export interface Room {
@@ -17,16 +19,29 @@ export interface Room {
   lookDescriptions?: Record<string, string>;
 }
 
-function isRoomExit(obj: any): obj is RoomExit {
-  return obj && typeof obj.to === 'string';
+interface RawRoom {
+  id?: unknown;
+  name?: unknown;
+  description?: unknown;
+  skyDescription?: unknown;
+  x?: unknown;
+  y?: unknown;
+  exits?: unknown;
+  items?: unknown;
+  lookDescriptions?: unknown;
 }
 
-function validateRoom(raw: any): Room {
+function isRoomExit(obj: unknown): obj is RoomExit {
+  return typeof obj === 'object' && obj !== null && typeof (obj as Record<string, unknown>).to === 'string';
+}
+
+function validateRoom(raw: unknown): Room {
   if (typeof raw !== 'object' || !raw) throw new Error('Invalid room');
+  const roomObj = raw as RawRoom;
   const exits: { [direction: string]: RoomExit } = {};
-  if (raw.exits && typeof raw.exits === 'object') {
-    for (const dir of Object.keys(raw.exits)) {
-      const exit = raw.exits[dir];
+  if (roomObj.exits && typeof roomObj.exits === 'object') {
+    for (const dir of Object.keys(roomObj.exits)) {
+      const exit = (roomObj.exits as Record<string, unknown>)[dir];
       if (isRoomExit(exit)) {
         exits[dir] = exit;
       } else if (typeof exit === 'string') {
@@ -36,16 +51,20 @@ function validateRoom(raw: any): Room {
     }
   }
   return {
-    id: String(raw.id),
-    name: String(raw.name),
-    description: String(raw.description),
-    skyDescription: raw.skyDescription ? String(raw.skyDescription) : undefined,
-    x: typeof raw.x === 'number' ? raw.x : 0,
-    y: typeof raw.y === 'number' ? raw.y : 0,
+    id: String(roomObj.id),
+    name: String(roomObj.name),
+    description: String(roomObj.description),
+    skyDescription: roomObj.skyDescription ? String(roomObj.skyDescription) : undefined,
+    x: typeof roomObj.x === 'number' ? roomObj.x : 0,
+    y: typeof roomObj.y === 'number' ? roomObj.y : 0,
     exits,
-    items: Array.isArray(raw.items) ? raw.items.map(String) : [],
-    lookDescriptions: raw.lookDescriptions && typeof raw.lookDescriptions === 'object' ? { ...raw.lookDescriptions } : undefined,
+    items: Array.isArray(roomObj.items) ? (roomObj.items as unknown[]).map(String) : [],
+    lookDescriptions: roomObj.lookDescriptions && typeof roomObj.lookDescriptions === 'object'
+      ? Object.fromEntries(
+          Object.entries(roomObj.lookDescriptions as Record<string, unknown>).map(([k, v]) => [k, String(v)])
+        )
+      : undefined,
   };
 }
 
-export const rooms: Room[] = (roomsData as any[]).map(validateRoom);
+export const rooms: Room[] = (roomsData as unknown[]).map(validateRoom);

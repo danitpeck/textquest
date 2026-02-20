@@ -1,6 +1,5 @@
-
 import React from 'react';
-import './AsciiMap.css';
+import styles from './AsciiMap.module.css';
 import type { Room } from '../engine/rooms';
 
 interface AsciiMapProps {
@@ -33,11 +32,12 @@ const AsciiMap: React.FC<AsciiMapProps> = ({ rooms, currentRoomId, size = 3, the
 
   // Render ASCII map
   return (
-    <div className="ascii-map-root">
+    <div className={styles.asciiMapRoot}>
       {grid.map((row, y) => (
         <div key={y}>
           {row.map((cell, x) => {
             if (!cell) return <span key={x}>&nbsp;&nbsp;</span>;
+
             // Determine symbol and color by room type and theme
             let symbol = '*';
             let color = '#3f6'; // default: green for forest
@@ -47,29 +47,69 @@ const AsciiMap: React.FC<AsciiMapProps> = ({ rooms, currentRoomId, size = 3, the
             } else if (cell.description.toLowerCase().includes('clearing')) {
               symbol = 'o';
               color = '#fd0';
+            } else if (cell.description.toLowerCase().includes('mountain')) {
+              symbol = '^';
+              color = '#888';
+            } else if (cell.description.toLowerCase().includes('cave')) {
+              symbol = '0';
+              color = '#aaa';
+            } else if (cell.description.toLowerCase().includes('building')) {
+              symbol = '#';
+              color = '#d22';
+            } else if (cell.description.toLowerCase().includes('desert')) {
+              symbol = '.';
+              color = '#fa9';
+            } else if (cell.description.toLowerCase().includes('swamp')) {
+              symbol = '%';
+              color = '#5a3';
+            } else if (cell.description.toLowerCase().includes('beach')) {
+              symbol = '=';
+              color = '#ffdd99';
+            } else if (cell.description.toLowerCase().includes('ocean')) {
+              symbol = '~';
+              color = '#06f';
+            } else if (cell.description.toLowerCase().includes('road')) {
+              symbol = '+';
+              color = '#b5651d';
+            } else if (cell.description.toLowerCase().includes('plains')) {
+              symbol = '"';
+              color = '#9f6';
+            } else if (cell.description.toLowerCase().includes('snow')) {
+              symbol = '*';
+              color = '#eef';
+            } else if (cell.description.toLowerCase().includes('volcano')) {
+              symbol = '^';
+              color = '#f44';
+            } else if (cell.description.toLowerCase().includes('ruins')) {
+              symbol = '%';
+              color = '#888';
             }
+
             // Theme overrides
             if (theme === 'amber') {
               color = '#ffb300';
             } else if (theme === 'green') {
               color = '#8f8';
             }
-            const isCurrent = cell.id === currentRoomId;
+
+            // Highlight current room
             let playerColor = '#e040fb'; // Fuchsia for Retro Dark
+            let playerSymbol = '@';
             if (theme === 'amber') playerColor = '#ffb300';
             else if (theme === 'green') playerColor = '#8f8';
+
+            const isCurrent = cell.id === currentRoomId;
             return (
               <span
                 key={x}
-                style={{
-                  fontWeight: isCurrent ? 'bold' : undefined,
-                  color: isCurrent ? playerColor : color,
-                  borderRadius: isCurrent ? 3 : undefined,
-                  padding: '0 2px',
-                }}
-                title={cell.name}
+                className={
+                  isCurrent
+                    ? `${styles.asciiMapRoom} ${styles.asciiMapRoomCurrent}`
+                    : styles.asciiMapRoom
+                }
+                style={isCurrent ? { color: playerColor } : { color }}
               >
-                {isCurrent ? '@' : symbol}
+                {isCurrent ? playerSymbol : symbol}
               </span>
             );
           })}

@@ -1,0 +1,32 @@
+.commandInput {
+  display: flex;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.commandInput input {
+  flex: 1;
+  padding: 0.5rem;
+  font-size: 1rem;
+  border: 1px solid var(--accent, #3a3ad1);
+  border-radius: 4px 0 0 4px;
+  outline: none;
+  background: var(--bg-panel, #232323);
+  color: var(--text-main, #f3f3f3);
+}
+
+.commandInput button {
+  padding: 0.5rem 1.2rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 0 4px 4px 0;
+  background: var(--accent, #3a3ad1);
+  color: var(--button-text, #fffbe6);
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.commandInput button:hover {
+  background: var(--accent-hover, #23238a);
+}

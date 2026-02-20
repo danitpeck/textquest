@@ -10,8 +10,8 @@ describe('Compass', () => {
     // All directions should be bold (active)
     ['N', 'E', 'S', 'W', 'U', 'D'].forEach(dir => {
       const el = screen.getByText(dir);
-      expect(el).toHaveClass('compass-dir--active');
-      expect(el).not.toHaveClass('compass-dir--hidden');
+      expect(el.className).toMatch(/compassDirActive/);
+      expect(el.className).not.toMatch(/compassDirHidden/);
     });
   });
 
@@ -21,18 +21,18 @@ describe('Compass', () => {
     // N and S active, others dimmed
     ['N', 'S'].forEach(dir => {
       const el = screen.getByText(dir);
-      expect(el).toHaveClass('compass-dir--active');
-      expect(el).not.toHaveClass('compass-dir--hidden');
+      expect(el.className).toMatch(/compassDirActive/);
+      expect(el.className).not.toMatch(/compassDirHidden/);
     });
     ['E', 'W', 'U', 'D'].forEach(dir => {
       const el = screen.getByText(dir);
-      expect(el).toHaveClass('compass-dir--hidden');
+      expect(el.className).toMatch(/compassDirHidden/);
     });
   });
 
   it('accepts long direction names', () => {
     render(<Compass exits={['north', 'down']} />);
-    expect(screen.getByText('N')).toHaveClass('compass-dir--active');
-    expect(screen.getByText('D')).toHaveClass('compass-dir--active');
+    expect(screen.getByText('N').className).toMatch(/compassDirActive/);
+    expect(screen.getByText('D').className).toMatch(/compassDirActive/);
   });
 });
