@@ -651,28 +651,60 @@ const App: React.FC = () => {
             <h2>Load Game</h2>
             <div className={styles.saveSlots}>
               {saveSystem.getAllSlots().map(slot => (
-                <button
-                  key={slot.slotNumber}
-                  className={styles.saveSlotButton}
-                  onClick={() => {
-                    const state = saveSystem.loadFromSlot(slot.slotNumber);
-                    if (state) {
-                      const targetRoom = rooms.find(r => r.id === state.currentRoomId);
-                      if (targetRoom) {
-                        setCurrentRoom(targetRoom);
-                        setPlayer(state.player);
-                        setOpenItems(new Set(state.openItems));
-                        setOpenDoors(new Set(state.openDoors));
-                        setContainerContents(state.containerContents);
+                <div key={slot.slotNumber} className={styles.slotRow}>
+                  <button
+                    className={styles.saveSlotButton}
+                    onClick={() => {
+                      const state = saveSystem.loadFromSlot(slot.slotNumber);
+                      if (state) {
+                        // Load existing save
+                        const targetRoom = rooms.find(r => r.id === state.currentRoomId);
+                        if (targetRoom) {
+                          setCurrentRoom(targetRoom);
+                          setPlayer(state.player);
+                          setOpenItems(new Set(state.openItems));
+                          setOpenDoors(new Set(state.openDoors));
+                          setContainerContents(state.containerContents);
+                          setCurrentSaveSlot(slot.slotNumber);
+                          setOutput(prev => [...prev, `Game loaded from Slot ${slot.slotNumber}.`, targetRoom.description]);
+                          setShowLoadMenu(false);
+                        }
+                      } else {
+                        // Empty slot - start new game
+                        const startRoom = rooms[0];
+                        const newPlayer = createPlayer(startRoom.id);
+                        setCurrentRoom(startRoom);
+                        setPlayer(newPlayer);
+                        setOpenItems(new Set());
+                        setOpenDoors(new Set());
+                        setContainerContents({ 'wooden_chest': ['copper_knife'] });
                         setCurrentSaveSlot(slot.slotNumber);
-                        setOutput(prev => [...prev, `Game loaded from Slot ${slot.slotNumber}.`, targetRoom.description]);
+                        const outputLines = [startRoom.description];
+                        const itemsLine = formatItemsInRoom(startRoom.items);
+                        if (itemsLine) outputLines.push(itemsLine);
+                        const exitList = Object.entries(startRoom.exits)
+                          .map(([dir]) => dir.charAt(0).toUpperCase() + dir.slice(1))
+                          .join(', ');
+                        outputLines.push(exitList ? `(Exits: ${exitList})` : '(No visible exits)');
+                        setOutput(prev => [...prev, `New game started in Slot ${slot.slotNumber}.`, ...outputLines]);
                         setShowLoadMenu(false);
                       }
-                    }
-                  }}
-                >
-                  {saveSystem.formatSlotDisplay(slot)}
-                </button>
+                    }}
+                  >
+                    {saveSystem.formatSlotDisplay(slot)}
+                  </button>
+                  <button
+                    className={styles.deleteSlotButton}
+                    onClick={() => {
+                      saveSystem.deleteSlot(slot.slotNumber);
+                      setShowLoadMenu(false);
+                      setOutput(prev => [...prev, `Slot ${slot.slotNumber} has been cleared.`]);
+                    }}
+                    title="Delete this save"
+                  >
+                    Delete
+                  </button>
+                </div>
               ))}
             </div>
             <button
