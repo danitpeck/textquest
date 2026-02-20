@@ -2,29 +2,31 @@
   {
     "id": "red_stone_chamber",
     "name": "Red Stone Chamber",
-    "description": "This is a small, dank, red stone room with faded carvings in its walls. There is one heavy stone door. Light streams in through the window on the opposite wall.",
+    "description": "This is a small, dank, red stone room with faded carvings in its walls.\nThere is one heavy stone door.\nLight streams in through the window on the opposite wall.",
     "x": 0,
     "y": 0,
     "exits": {
       "west": {
-        "to": "",
-        "exitDescription": "Though worn with time, this door is carved of the same stone as the rest of the room. It is unlocked.",
+        "to": "hallway_of_torches",
+        "exitDescriptionClosed": "Though worn with time, this door is carved of the same stone as the rest of the room. It is unlocked.",
+        "exitDescriptionOpen": "Ahead, you see another red stone room. This one is lined with sconces, in which sit three lit torches.",
         "isDoor": true,
-        "doorId": "red_stone_door"
+        "doorId": "heavy_stone_door",
+        "aliases": ["heavy stone door", "door"]
       },
       "east": {
         "to": "thorny_poisonous_garden",
-        "exitDescriptionOpen": "Outside, you see a deadly garden lined with thorny bushes and pungent flowers of dubious origin.",
         "exitDescriptionClosed": "The clouded glass of this window is bordered on all sides by a smooth stone frame. It is unlatched.",
+        "exitDescriptionOpen": "Outside, you see a deadly garden lined with thorny bushes and pungent flowers of dubious origin.",
         "isDoor": true,
         "doorId": "clouded_window",
-        "aliases": ["window"]
+        "aliases": ["clouded window", "window"]
       }  
     },
     "items": [],
     "lookDescriptions": {}
   },
-    {
+  {
     "id": "thorny_poisonous_garden",
     "name": "Thorny Poisonous Garden",
     "description": "You climb out of the window into the deadly, thorny, poisonous garden. On a better day, you might have got away with only a few scratches and a foot full of thorns. Unfortunately for you, this garden is home to a large, hungry, ambulatory plant by the name of Rashflower, and these actions have offered you up as her dinner.",
@@ -38,26 +40,155 @@
   {
     "id": "hallway_of_torches",
     "name": "Hallway of Torches",
-    "description": "This is hallway is ensconced with lit torches that flicker and dance in the moving air. Behind you lies the heavy stone door from which you came. Ahead there stands another stone door, marked with a yellow rune.",
+    "description": "This is hallway is ensconced with lit torches that flicker and dance in the moving air.\nBehind you lies the heavy stone door from which you came.\nAhead there stands another stone door, marked with a yellow rune.",
     "x": -1,
     "y": 0,
     "exits": {
-      "east": {
-        "to": "red_stone_chamber",
-        "exitDescription": "Carved of red stone. This door stands open.",
-        "isDoor": true,
-        "doorId": "red_stone_door"
-      },
       "west": {
         "to": "chamber_of_runes",
-        "exitDescription": "Carved of red stone, this door has been painted with a bright yellow rune. It is unlocked.",
+        "exitDescriptionClosed": "Carved of red stone, this door has been painted with a bright yellow rune. It is unlocked.",
+        "exitDescriptionOpen": "Ahead, you see a partially collapsed hallway with three doors.",
         "isDoor": true,
-        "doorId": "yellow_rune_door"
+        "doorId": "yellow_rune_door",
+        "aliases": ["yellow rune door", "rune door"]
+      },
+      "east": {
+        "to": "red_stone_chamber",
+        "exitDescriptionClosed": "Carved of red stone. This door is shut.",
+        "exitDescriptionOpen": "Carved of red stone, this door opens into a musty, dank room with a single window.",
+        "isDoor": true,
+        "doorId": "heavy_stone_door",
+        "aliases": ["heavy stone door"]
       }
     },
     "items": [],
     "lookDescriptions": {
-      "rune": "A yellow rune etched into the stone door. It glows faintly."
+      "yellow rune": "This rune depicts a snarling lion.",
+      "rune": "This rune depicts a snarling lion."
     }
+  },
+  {
+    "id": "chamber_of_runes",
+    "name": "Chamber of Runes",
+    "description": "The ceiling has collapsed in this hallway, letting in cutting vegetation that has grown down the southern wall. Sounds of a stream bubble nearby.\nBehind you lies the yellow-rune door.\nTo the north, you see a stone door painted solid black.\nTo the west, you see a partially shattered stone door.",
+    "x": -2,
+    "y": 0,
+    "exits": {
+      "north": {
+        "to": "ruined_library",
+        "exitDescriptionClosed": "The black paint upon this door is flecked with age, but mostly whole. It is unlocked.",
+        "exitDescriptionOpen": "Through the black door you can see a dreary, musty room. Rotten bookshelves line its walls.",
+        "isDoor": true,
+        "doorId": "black_door",
+        "aliases": ["black door", "painted door"]
+      },      
+      "west": {
+        "to": "pottery_chamber",
+        "exitDescriptionClosed": "This door is carved of red stone, but has been cracked by whatever caved in the roof. It is unlocked.",
+        "exitDescriptionOpen": "This cracked stone door opens onto a round room full of three finely worked, massive pots.",
+        "isDoor": true,
+        "doorId": "shattered_door",
+        "aliases": ["shattered door", "cracked door"]
+      },
+      "east": {
+        "to": "hallway_of_torches",
+        "exitDescriptionClosed": "You see a red stone door. It is unlocked.",
+        "exitDescriptionOpen": "You see another red stone room past the door with the yellow rune. This one is lined with sconces, in which sit three lit torches.",
+        "isDoor": true,
+        "doorId": "yellow_rune_door",
+        "aliases": ["yellow rune door", "rune door"]
+      }
+    },
+    "items": [],
+    "lookDescriptions": {
+      "dust": "Centuries of dust coat every surface."
+    }
+  },
+  {
+    "id": "ruined_library",
+    "name": "Ruined Library",
+    "description": "Dreary and musty, this room houses ruined bookshelves and must once have been a library.\nBehind you lies the black-painted door.",
+    "x": -2,
+    "y": -1,
+    "exits": {
+      "south": {
+        "to": "chamber_of_runes",
+        "exitDescriptionClosed": "Glowing paint is suddenly visible throughout the room, particularly upon this door. It illuminates a beautiful illustration of a crow, with wings spread as if to protect the room.",
+        "exitDescriptionOpen": "To the south, you see a partially collapsed hallway overgrown with vegetation.",
+        "isDoor": true,
+        "doorId": "black_door",
+        "aliases": ["black door", "painted door", "door"]
+      }
+    },
+    "items": [],
+    "npcs": ["crow_spirit"],
+    "lookDescriptions": {}
+  },
+  {
+    "id": "pottery_chamber",
+    "name": "Pottery Chamber",
+    "description": "This round room shows carvings of several fearsome dragons crawling across the walls in battles of yore.\nThere is a cracked stone door to the east.\nThe stone door to the south stands open.\nThree massive clay pots are positioned in the center of the room, each depicting a cowering humanoid figure.",
+    "x": -3,
+    "y": 0,
+    "exits": {
+      "east": {
+        "to": "chamber_of_runes",
+        "exitDescriptionClosed": "The cracked stone door blocks your view. It is unlocked.",
+        "exitDescriptionOpen": "To the east, you see a partially collapsed hallway overgrown with vegetation.",
+        "isDoor": true,
+        "doorId": "shattered_door",
+        "aliases": ["shattered door", "cracked door"]
+      },
+      "south": {
+        "to": "dining_hall",
+        "exitDescriptionClosed": "To the south, you see an unadorned stone door. It is unlocked.",
+        "exitDescriptionOpen": "To the south, you see an abandoned dining hall. The stone door stands open.",
+        "isDoor": true,
+        "doorId": "unadorned_stone_door",
+        "aliases": ["unadorned stone door", "stone door"]
+      },
+      "north": {
+        "to": "secret_chamber",
+        "revealedBy": "potsPuzzle",
+        "exitDescription": "This panel of stone slid free of its latched-in home in the wall when you aligned the clay pots. It stands open, leading into a small room housing a staircase."
+      }
+    },
+    "items": ["massive_clay_pots"],
+    "npcs": [],
+    "lookDescriptions": {}
+  },
+  {
+    "id": "dining_hall",
+    "name": "Dining Hall",
+    "description": "An abandoned dining hall with a long stone table and scattered chairs.",
+    "x": -3,
+    "y": 1,
+    "exits": {
+      "north": {
+        "to": "pottery_chamber",
+        "exitDescriptionClosed": "An unadorned stone door blocks the way north.",
+        "exitDescriptionOpen": "Through the doorway, you see the pottery chamber.",
+        "isDoor": true,
+        "doorId": "unadorned_stone_door",
+        "aliases": ["unadorned stone door", "stone door"]
+      }
+    },
+    "items": [],
+    "lookDescriptions": {}
+  },
+  {
+    "id": "secret_chamber",
+    "name": "Secret Chamber",
+    "description": "A small, dimly lit chamber with stone walls. A staircase descends into darkness.",
+    "x": -3,
+    "y": -1,
+    "exits": {
+      "south": {
+        "to": "pottery_chamber",
+        "exitDescription": "The way back to the pottery chamber."
+      }
+    },
+    "items": [],
+    "lookDescriptions": {}
   }
 ]

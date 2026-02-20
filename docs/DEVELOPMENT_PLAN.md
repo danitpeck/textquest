@@ -107,6 +107,173 @@
    - Consequences of NPC interactions
    - Story progression tracking
 
+## NPC System Design (Planned)
+
+### Phase 1: NPC Visibility & Room Presence (This Session)
+**Goal:** Display NPCs in rooms, trigger appearance on events
+
+**Data Structure (npcs.ts):**
+```typescript
+interface NPC {
+  id: string;                    // e.g., "crow_spirit"
+  name: string;                  // "Crow Spirit"
+  description: string;           // Multi-line description visible in room
+  aliases: string[];             // ["crow", "spirit", "bird"]
+  visible: boolean;              // Initially shown/hidden
+  triggers?: {
+    onDoorClosed?: string;       // doorId that triggers appearance
+    onItemDropped?: string;      // itemId that triggers appearance
+    onRoomEnter?: boolean;       // Appears when player enters
+  };
+}
+```
+
+**Room Integration:**
+- Add `npcs: string[]` to Room interface (list of NPC ids in room)
+- Update room description output to include NPC descriptions
+- NPCs listed in room like items: "The crow spirit is here."
+
+**Trigger System:**
+- Track NPC state in App.tsx: `npcState: Record<npcId, { visible: boolean }>`
+- Add `triggers` field to door/event handlers
+- When door closes → check if it has `onDoorClosed` trigger → change NPC visibility
+- Example: Close black_door → trigger crow_spirit visibility
+
+### Phase 2: Conversation Interface (Future Session)
+**Goal:** Enable "talk to" commands and dialogue trees
+
+**Planned Features:**
+- `talk <npc>` / `speak <npc>` / `ask <npc>` commands
+- Dialogue tree UI (modal or bottom panel)
+- NPC response state machine
+- Conversation choices
+
+**Not implementing yet** - Just planning the architecture
+
+## Puzzle System Design (Planned)
+
+### Activity Commands: Turn / Push / Pull / etc
+**Goal:** Enable arbitrary puzzle actions like "turn pots"
+
+**Parser Enhancement (parser.ts):**
+```typescript
+export function parseTurn(command: string): { type: 'turn', target: string } | null
+export function parsePush(command: string): { type: 'push', target: string } | null
+// etc - generalized activity parser for puzzle interactions
+```
+
+**Item Enhancement (items.ts or room-specific):**
+```typescript
+interface Item {
+  // ... existing fields ...
+  turnDescription?: string;      // "You turn the pot and hear grinding..."
+  turnEffect?: {
+    message: string;
+    puzzleId?: string;           // Links to puzzle solver
+    revealExit?: string;         // doorId to reveal after solving
+  };
+  pushable?: boolean;
+  // etc for other activities
+}
+```
+
+**Puzzle State Tracking (App.tsx):**
+```typescript
+const [puzzleState, setPuzzleState] = useState<Record<string, Record<string, boolean>>>({
+  pottery_chamber: {
+    potsTurned: false,
+    secretDoorRevealed: false
+  }
+});
+```
+
+**Activity Handler Flow:**
+```
+Player: turn pots
+↓
+parseTurn() → finds "pots" in room items
+↓
+Check item.turnEffect
+↓
+If turnEffect exists:
+  - Display turnDescription message
+  - Update puzzleState[roomId][puzzleId] = true
+  - If revealExit specified:
+    - Add exit to room dynamically
+    - Display "A secret door appears!"
+```
+
+### Conditional/Dynamic Exits
+**Goal:** Exits that appear only after puzzle is solved
+
+**Two Approaches:**
+
+**Approach A: Separate Hidden Exits**
+```typescript
+interface Room {
+  exits: { [key: string]: RoomExit };
+  hiddenExits?: {     // Track separately, revealed on puzzle solve
+    secretDoor: {
+      revealedBy: "potsPuzzle";
+      exit: RoomExit;
+    }
+  };
+}
+```
+- When puzzle solved → merge hiddenExits[key].exit into main exits
+- Message: "A secret door opens to the north!"
+
+**Approach B: Conditional Exits (Simpler)**
+```typescript
+interface RoomExit {
+  // ... existing fields ...
+  revealedBy?: string;    // Puzzle ID that must be solved
+}
+```
+- Filter exits at display time: only show if revealedBy is null OR puzzleState says it's solved
+- Add revealed exit to room.exits dynamically on solve
+
+**Recommendation:** Approach B (simpler, cleaner)
+
+### Example: Pottery Puzzle
+```json
+{
+  "id": "pottery_chamber",
+  "exits": {
+    "east": { ... },
+    "secretNorth": {
+      "to": "secret_chamber",
+      "revealedBy": "potsPuzzle",
+      "exitDescription": "A hidden passage to the north.",
+      "isDoor": false,  // Can't close secret doors
+      "aliases": ["passage", "north"]
+    }
+  }
+}
+```
+
+Then in pottery_chamber items:
+```json
+{
+  "id": "massive_clay_pots",
+  "name": "massive clay pots",
+  "turnDescription": "You turn the pots and hear a deep grinding sound...\nA section of wall slides open to the north!",
+  "turnEffect": {
+    "message": "The secret passage is now accessible.",
+    "puzzleId": "potsPuzzle",
+    "revealExit": "secretNorth"
+  }
+}
+```
+
+**Implementation Steps:**
+1. Add `parseTurn()` to parser.ts
+2. Add `turnDescription`, `turnEffect` to items (or room-specific item overrides)
+3. Add `puzzleState` to App.tsx state + save/load
+4. Add activity handler in App command processor
+5. Filter exits to show only revealed ones
+6. Merge hidden exits into displayed exits when solved
+
 ## Technical Decisions
 
 **State Management:**

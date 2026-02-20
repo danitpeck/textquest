@@ -9,10 +9,11 @@ import PlayerStats from './components/PlayerStats';
 
 import { rooms, testingGroundRooms } from './engine/rooms';
 import type { Room, RoomExit } from './engine/rooms';
-import { parseMovement, parseLook, parseExamine, parseGet, parseDrop, parseOpen, parseClose, parsePut, parseSave, parseLoad, parseClear, parseDebugTeleport, directionSynonyms } from './engine/parser';
+import { parseMovement, parseLook, parseExamine, parseGet, parseDrop, parseOpen, parseClose, parsePut, parseSave, parseLoad, parseClear, parseDebug, parseTurn, parsePush, parsePull, directionSynonyms } from './engine/parser';
 import { createPlayer, getDescriptionTier, canAddToInventory } from './engine/player';
 import type { Player } from './engine/player';
 import { getItemsByIds, formatItemsInRoom } from './engine/items';
+import { getNPCById, formatNPCsInRoom, findNPCByNameOrPrefix } from './engine/npcs';
 import { saveSystem, type GameState } from './engine/save';
 
 // Helper: fuzzy match item by name, alias, or prefix
@@ -38,7 +39,7 @@ const findItemByNameOrPrefix = (itemIds: string[], searchTerm: string) => {
   return null;
 };
 
-// Helper: find exit by direction, abbreviation, or alias
+// Helper: find exit by direction, abbreviation, or alias (with partial matching)
 const findExitByTarget = (exits: { [direction: string]: RoomExit }, target: string): [string, RoomExit] | null => {
   const loweredTarget = target.toLowerCase();
   
@@ -53,10 +54,55 @@ const findExitByTarget = (exits: { [direction: string]: RoomExit }, target: stri
     return [expandedDir, exits[expandedDir]];
   }
   
-  // Try alias match
+  // Try alias match (exact first, then partial)
+  const userWords = loweredTarget.split(/\s+/);
+  
   for (const [dir, exit] of Object.entries(exits)) {
-    if (exit.aliases && exit.aliases.some(alias => alias.toLowerCase() === loweredTarget)) {
-      return [dir, exit];
+    if (!exit.aliases) continue;
+    
+    for (const alias of exit.aliases) {
+      const aliasLower = alias.toLowerCase();
+      
+      // Exact alias match
+      if (aliasLower === loweredTarget) {
+        return [dir, exit];
+      }
+      
+      // Skip partial matching for single-letter inputs to avoid conflicts with direction abbreviations
+      if (loweredTarget.length === 1) {
+        continue;
+      }
+      
+      // Partial alias match with word/partial-word support
+      const aliasWords = aliasLower.split(/\s+/);
+      
+      // Check if user input matches a prefix of the alias
+      let matches = true;
+      for (let i = 0; i < userWords.length; i++) {
+        if (i >= aliasWords.length) {
+          // User input has more words than alias
+          matches = false;
+          break;
+        }
+        
+        // For all words except the last, require exact match
+        if (i < userWords.length - 1) {
+          if (aliasWords[i] !== userWords[i]) {
+            matches = false;
+            break;
+          }
+        } else {
+          // For the last word, allow partial match (prefix)
+          if (!aliasWords[i].startsWith(userWords[i])) {
+            matches = false;
+            break;
+          }
+        }
+      }
+      
+      if (matches && userWords.length > 0) {
+        return [dir, exit];
+      }
     }
   }
   
@@ -74,6 +120,56 @@ const getExitName = (_direction: string, exit: RoomExit): string => {
   return 'door';
 };
 
+// Helper: find a room by ID in either main rooms or testing ground
+const findRoomById = (roomId: string): Room | undefined => {
+  return rooms.find(r => r.id === roomId) || testingGroundRooms.find(r => r.id === roomId);
+};
+
+// Helper: check if an exit should be visible based on puzzle state
+const isExitVisible = (exit: RoomExit, roomId: string, puzzleState: Record<string, Record<string, boolean>>): boolean => {
+  // If the exit doesn't require a puzzle to be solved, it's visible
+  if (!exit.revealedBy) {
+    return true;
+  }
+  
+  // Check if the required puzzle is solved in this room
+  const roomPuzzles = puzzleState[roomId] || {};
+  return roomPuzzles[exit.revealedBy] === true;
+};
+
+// Helper: format exits with door state
+const formatExits = (exits: { [direction: string]: RoomExit }, roomId: string, openDoors: Set<string>, puzzleState: Record<string, Record<string, boolean>>): string => {
+  const visibleExits = Object.entries(exits)
+    .filter(([_dir, exit]) => isExitVisible(exit, roomId, puzzleState))
+    .map(([dir, exit]) => {
+      const displayName = dir.charAt(0).toUpperCase() + dir.slice(1);
+      if (exit.isDoor) {
+        const stateKey = exit.doorId ? `door:${exit.doorId}` : `${roomId}-${dir}`;
+        const isOpen = openDoors.has(stateKey);
+        return `${displayName} (${isOpen ? 'Open' : 'Closed'})`;
+      }
+      return displayName;
+    });
+  
+  if (visibleExits.length === 0) return 'No visible exits';
+  return `Exits: ${visibleExits.join(', ')}`;
+};
+
+// Helper: format room description with all details
+const formatRoomDescription = (room: Room, openDoors: Set<string>, puzzleState: Record<string, Record<string, boolean>>, npcState: Record<string, boolean>): string[] => {
+  const descLines = room.description.split('\n');
+  const itemsLine = formatItemsInRoom(room.items);
+  const npcLine = room.npcs ? formatNPCsInRoom(room.npcs, npcState) : null;
+  const exitDisplay = formatExits(room.exits, room.id, openDoors, puzzleState);
+  
+  return [
+    ...descLines,
+    ...(itemsLine ? [itemsLine] : []),
+    ...(npcLine ? [npcLine] : []),
+    exitDisplay
+  ];
+};
+
 const App: React.FC = () => {
   // Start in the first room from the data
   const [currentRoom, setCurrentRoom] = useState<Room>(rooms[0]);
@@ -84,17 +180,12 @@ const App: React.FC = () => {
     // Initialize with base contents from items.ts
     'wooden_chest': ['copper_knife']
   });
+  const [puzzleState, setPuzzleState] = useState<Record<string, Record<string, boolean>>>({});
+  const [npcState, setNpcState] = useState<Record<string, boolean>>({});  // Track NPC visibility
   const [currentSaveSlot, setCurrentSaveSlot] = useState<1 | 2 | 3>(1);
   const [showLoadMenu, setShowLoadMenu] = useState(false);
   const [output, setOutput] = useState<string[]>(() => {
-    const lines = [currentRoom.description];
-    const itemsLine = formatItemsInRoom(currentRoom.items);
-    if (itemsLine) lines.push(itemsLine);
-    const exitList = Object.entries(currentRoom.exits)
-      .map(([dir]) => dir.charAt(0).toUpperCase() + dir.slice(1))
-      .join(', ');
-    lines.push(exitList ? `(Exits: ${exitList})` : '(No visible exits)');
-    return lines;
+    return formatRoomDescription(rooms[0], new Set(), {}, {});
   });
   const [theme, setTheme] = useState<'default' | 'amber' | 'green'>('default');
   // Compass state
@@ -110,13 +201,7 @@ const App: React.FC = () => {
     const look = parseLook(cmd);
     if (look) {
       if (!look.target) {
-        const outputLines = [currentRoom.description];
-        const itemsLine = formatItemsInRoom(currentRoom.items);
-        if (itemsLine) outputLines.push(itemsLine);
-        const exitList = Object.entries(currentRoom.exits)
-          .map(([dir]) => dir.charAt(0).toUpperCase() + dir.slice(1))
-          .join(', ');
-        outputLines.push(exitList ? `(Exits: ${exitList})` : '(No visible exits)');
+        const outputLines = formatRoomDescription(currentRoom, openDoors, puzzleState, npcState);
         setOutput(prev => [...prev, ...outputLines]);
         return;
       }
@@ -150,34 +235,129 @@ const App: React.FC = () => {
         }
         return;
       }
-      // look <thing> (custom look descriptions) - but also show container contents if open
-      const lookingAt = findItemByNameOrPrefix(currentRoom.items, look.target);
-      if (currentRoom.lookDescriptions && currentRoom.lookDescriptions[look.target]) {
-        const desc = currentRoom.lookDescriptions[look.target];
-        setOutput(prev => [...prev, desc ?? "You see nothing special."]);
-        // If it's an open container, also show contents
-        if (lookingAt && lookingAt.canOpen && openItems.has(lookingAt.id)) {
-          const contents = containerContents[lookingAt.id] || lookingAt.contents || [];
-          if (contents.length > 0) {
-            const itemList = getItemsByIds(contents).map(i => i.name).join(', ');
-            setOutput(prev => [...prev, `Inside: ${itemList}`]);
+      // look <thing> (custom look descriptions) - check these first, including exit alias names
+      // This allows lookDescriptions to shadow exits
+      if (currentRoom.lookDescriptions) {
+        // First try exact match on user input
+        if (currentRoom.lookDescriptions[look.target]) {
+          const desc = currentRoom.lookDescriptions[look.target];
+          setOutput(prev => [...prev, desc ?? "You see nothing special."]);
+          return;
+        }
+        
+        // Then try exact match on exit aliases (before partial matching)
+        let foundExactExitAlias = false;
+        for (const [_dir, exit] of Object.entries(currentRoom.exits)) {
+          if (exit.aliases) {
+            for (const alias of exit.aliases) {
+              if (alias.toLowerCase() === look.target) {
+                foundExactExitAlias = true;
+                // Exact alias match - check if there's a lookDescription for it
+                if (currentRoom.lookDescriptions[alias]) {
+                  const desc = currentRoom.lookDescriptions[alias];
+                  setOutput(prev => [...prev, desc ?? "You see nothing special."]);
+                  return;
+                }
+                // If no lookDescription for this exact alias, will handle as exit later
+                break;
+              }
+            }
+            if (foundExactExitAlias) break;
           }
         }
-        return;
-      }
-      // If looking at an open container without custom description, show contents
-      if (lookingAt && lookingAt.canOpen && openItems.has(lookingAt.id)) {
-        const desc = lookingAt.descriptions[0] || lookingAt.name;
-        const contents = containerContents[lookingAt.id] || lookingAt.contents || [];
-        if (contents.length === 0) {
-          setOutput(prev => [...prev, `${desc} It's open but empty.`]);
-        } else {
-          const itemList = getItemsByIds(contents).map(i => i.name).join(', ');
-          setOutput(prev => [...prev, `${desc} Inside: ${itemList}`]);
+        
+        // When user input partially matches an exit alias, check if the exit's individual words
+        // appear in lookDescriptions. This allows 'look yellow' to find 'rune' from 'yellow rune door'
+        // But skip this if we already found an exact exit alias match (those should show the exit, not word matches)
+        if (!foundExactExitAlias) {
+          for (const [_dir, exit] of Object.entries(currentRoom.exits)) {
+            if (exit.aliases) {
+              for (const alias of exit.aliases) {
+                if (alias.toLowerCase().startsWith(look.target)) {
+                  // Partial exit alias match - extract words and check lookDescriptions
+                  const aliasWords = alias.toLowerCase().split(/\s+/);
+                  for (const word of aliasWords) {
+                    if (currentRoom.lookDescriptions[word]) {
+                      const desc = currentRoom.lookDescriptions[word];
+                      setOutput(prev => [...prev, desc ?? "You see nothing special."]);
+                      return;
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
+        
+        // Try partial match on lookDescription keys (user input is prefix of key)
+        for (const [key, desc] of Object.entries(currentRoom.lookDescriptions)) {
+          if (key.toLowerCase().startsWith(look.target)) {
+            setOutput(prev => [...prev, desc ?? "You see nothing special."]);
+            return;
+          }
+        }
+        
+        // Try partial match on exit alias names that have lookDescriptions
+        for (const [_dir, exit] of Object.entries(currentRoom.exits)) {
+          if (exit.aliases) {
+            for (const alias of exit.aliases) {
+              if (alias.toLowerCase().startsWith(look.target)) {
+                if (currentRoom.lookDescriptions[alias]) {
+                  const desc = currentRoom.lookDescriptions[alias];
+                  setOutput(prev => [...prev, desc ?? "You see nothing special."]);
+                  return;
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      // Check for items in the room with custom descriptions
+      const lookingAt = findItemByNameOrPrefix(currentRoom.items, look.target);
+      if (lookingAt) {
+        // Check if there's a custom item description in lookDescriptions
+        if (currentRoom.lookDescriptions && currentRoom.lookDescriptions[look.target]) {
+          const desc = currentRoom.lookDescriptions[look.target];
+          setOutput(prev => [...prev, desc ?? "You see nothing special."]);
+          // If it's an open container, also show contents
+          if (lookingAt.canOpen && openItems.has(lookingAt.id)) {
+            const contents = containerContents[lookingAt.id] || lookingAt.contents || [];
+            if (contents.length > 0) {
+              const itemList = getItemsByIds(contents).map(i => i.name).join(', ');
+              setOutput(prev => [...prev, `Inside: ${itemList}`]);
+            }
+          }
+          return;
+        }
+        // If looking at an open container without custom description, show contents
+        if (lookingAt.canOpen && openItems.has(lookingAt.id)) {
+          const desc = lookingAt.descriptions[0] || lookingAt.name;
+          const contents = containerContents[lookingAt.id] || lookingAt.contents || [];
+          if (contents.length === 0) {
+            setOutput(prev => [...prev, `${desc} It's open but empty.`]);
+          } else {
+            const itemList = getItemsByIds(contents).map(i => i.name).join(', ');
+            setOutput(prev => [...prev, `${desc} Inside: ${itemList}`]);
+          }
+          return;
+        }
+        // If we found an item but no custom description, show the item's base description
+        const itemDesc = lookingAt.descriptions[0] || lookingAt.name;
+        setOutput(prev => [...prev, itemDesc]);
         return;
       }
-      // look <direction> or look <alias>
+
+      // Check for NPCs in the room
+      if (currentRoom.npcs && currentRoom.npcs.length > 0) {
+        const npc = findNPCByNameOrPrefix(currentRoom.npcs, look.target, npcState);
+        if (npc) {
+          setOutput(prev => [...prev, npc.description]);
+          return;
+        }
+      }
+
+      // look <direction> or look <alias> - check if shadowed by lookDescription
       const dir = look.target;
       let exit = currentRoom.exits[dir];
       let matchedDirection = dir;
@@ -193,6 +373,38 @@ const App: React.FC = () => {
       }
       
       if (exit) {
+        // Check if exit is visible (puzzle might need to be solved)
+        if (!isExitVisible(exit, currentRoom.id, puzzleState)) {
+          setOutput(prev => [...prev, "You see nothing special."]);
+          return;
+        }
+        
+        // Check if there's a lookDescription that shadows this exit
+        // Try exact match on target first, then try matching exit aliases
+        let shadowedDescription = null;
+        if (currentRoom.lookDescriptions) {
+          // Try exact match on the user's input
+          if (currentRoom.lookDescriptions[look.target]) {
+            shadowedDescription = currentRoom.lookDescriptions[look.target];
+          }
+          // Try matching against exit aliases
+          if (!shadowedDescription && exit.aliases) {
+            for (const alias of exit.aliases) {
+              if (currentRoom.lookDescriptions[alias]) {
+                shadowedDescription = currentRoom.lookDescriptions[alias];
+                break;
+              }
+            }
+          }
+        }
+        
+        // If shadowed by a custom look description, show that instead
+        if (shadowedDescription) {
+          setOutput(prev => [...prev, shadowedDescription]);
+          return;
+        }
+        
+        // Otherwise show the exit description
         // Check if it's a door and show appropriate description based on state
         if (exit.isDoor) {
           const stateKey = exit.doorId ? `door:${exit.doorId}` : `${currentRoom.id}-${matchedDirection}`;
@@ -233,6 +445,12 @@ const App: React.FC = () => {
       if (exitMatch) {
         const [dir, exit] = exitMatch;
         
+        // Check if exit is visible (puzzle might need to be solved)
+        if (!isExitVisible(exit, currentRoom.id, puzzleState)) {
+          setOutput(prev => [...prev, "You don't see that here."]);
+          return;
+        }
+        
         // Check if this exit is actually a door
         if (exit.isDoor !== true) {
           setOutput(prev => [...prev, "That's not something you can open."]);
@@ -248,6 +466,22 @@ const App: React.FC = () => {
         setOpenDoors(prev => new Set([...prev, stateKey]));
         const exitName = getExitName(dir, exit);
         setOutput(prev => [...prev, `You open the ${exitName}.`]);
+        
+        // Check for NPC triggers on door open
+        if (exit.doorId) {
+          // Check all NPCs in current room for onDoorOpened trigger
+          if (currentRoom.npcs) {
+            for (const npcId of currentRoom.npcs) {
+              const npc = getNPCById(npcId);
+              if (npc && npc.triggers?.onDoorOpened === exit.doorId) {
+                // Make NPC invisible
+                setNpcState(prev => ({ ...prev, [npcId]: false }));
+                const message = npc.disappearMessage || `The ${npc.name} vanishes from sight.`;
+                setOutput(prev => [...prev, '', message]);
+              }
+            }
+          }
+        }
         return;
       }
 
@@ -313,6 +547,12 @@ const App: React.FC = () => {
       if (exitMatch) {
         const [dir, exit] = exitMatch;
         
+        // Check if exit is visible (puzzle might need to be solved)
+        if (!isExitVisible(exit, currentRoom.id, puzzleState)) {
+          setOutput(prev => [...prev, "You don't see that here."]);
+          return;
+        }
+        
         // Check if this exit is actually a door
         if (exit.isDoor !== true) {
           setOutput(prev => [...prev, "That's not something you can close."]);
@@ -332,6 +572,22 @@ const App: React.FC = () => {
         });
         const exitName = getExitName(dir, exit);
         setOutput(prev => [...prev, `You close the ${exitName}.`]);
+        
+        // Check for NPC triggers on door close
+        if (exit.doorId) {
+          // Check all NPCs in current room for onDoorClosed trigger
+          if (currentRoom.npcs) {
+            for (const npcId of currentRoom.npcs) {
+              const npc = getNPCById(npcId);
+              if (npc && npc.triggers?.onDoorClosed === exit.doorId) {
+                // Make NPC visible
+                setNpcState(prev => ({ ...prev, [npcId]: true }));
+                const message = npc.appearMessage || npc.description;
+                setOutput(prev => [...prev, '', message]);
+              }
+            }
+          }
+        }
         return;
       }
 
@@ -370,6 +626,12 @@ const App: React.FC = () => {
     let exit = dir ? currentRoom.exits[dir] : null;
     let matchedDirection = dir || '';
     
+    // If parseMovement detected a direction but no exit exists, don't fall through to alias matching
+    if (dir && !exit) {
+      setOutput(prev => [...prev, "You can't go that way."]);
+      return;
+    }
+    
     // If not found via parseMovement, check if any word in the command matches an exit name directly or via alias
     if (!exit) {
       const words = cmd.trim().toLowerCase().split(/\s+/);
@@ -392,6 +654,12 @@ const App: React.FC = () => {
     }
     
     if (exit) {
+      // Check if this exit is visible (puzzle might need to be solved)
+      if (!isExitVisible(exit, currentRoom.id, puzzleState)) {
+        setOutput(prev => [...prev, "You can't go that way."]);
+        return;
+      }
+      
       // Check if this exit is a closed door
       if (exit.isDoor === true) {
         const stateKey = exit.doorId ? `door:${exit.doorId}` : `${currentRoom.id}-${matchedDirection}`;
@@ -402,7 +670,7 @@ const App: React.FC = () => {
         }
       }
       
-      const nextRoom = rooms.find(r => r.id === exit.to);
+      const nextRoom = findRoomById(exit.to);
       if (nextRoom) {
         setCurrentRoom(nextRoom);
         setPlayer(prev => ({ ...prev, location: nextRoom.id }));
@@ -414,13 +682,7 @@ const App: React.FC = () => {
           return;
         }
         
-        const exitList = Object.entries(nextRoom.exits)
-          .map(([dir]) => dir.charAt(0).toUpperCase() + dir.slice(1))
-          .join(', ');
-        const outputLines = [nextRoom.description];
-        const itemsLine = formatItemsInRoom(nextRoom.items);
-        if (itemsLine) outputLines.push(itemsLine);
-        outputLines.push(exitList ? `(Exits: ${exitList})` : '(No visible exits)');
+        const outputLines = formatRoomDescription(nextRoom, openDoors, puzzleState, npcState);
         setOutput(prev => [...prev, ...outputLines]);
       } else {
         setOutput(prev => [...prev, "You can't go that way."]);
@@ -509,6 +771,15 @@ const App: React.FC = () => {
           }
         }));
         return;
+      }
+
+      // Check for NPCs in the room
+      if (currentRoom.npcs && currentRoom.npcs.length > 0) {
+        const npc = findNPCByNameOrPrefix(currentRoom.npcs, examine.target, npcState);
+        if (npc) {
+          setOutput(prev => [...prev, npc.description]);
+          return;
+        }
       }
 
       setOutput(prev => [...prev, "You don't see that here."]);
@@ -651,6 +922,159 @@ const App: React.FC = () => {
       return;
     }
 
+    // Turn parser
+    const turn = parseTurn(cmd);
+    if (turn) {
+      // Find item in room first, then inventory
+      let item = findItemByNameOrPrefix(currentRoom.items, turn.target);
+      if (!item) {
+        item = findItemByNameOrPrefix(player.inventory, turn.target);
+      }
+
+      if (!item) {
+        setOutput(prev => [...prev, "You don't see that here."]);
+        return;
+      }
+
+      if (!item.turnEffect) {
+        setOutput(prev => [...prev, "You can't turn that."]);
+        return;
+      }
+
+      // Check if puzzle is already solved
+      const puzzleId = item.turnEffect.puzzleId;
+      const alreadySolved = puzzleId && puzzleState[currentRoom.id]?.[puzzleId];
+
+      if (alreadySolved) {
+        setOutput(prev => [...prev, "They refuse to budge further. The mechanism has already been activated."]);
+        return;
+      }
+
+      // Display the activity description
+      const outputLines = [item.turnDescription || `You turn the ${item.name}.`];
+
+      // Update puzzle state if this effect has a puzzleId
+      if (puzzleId) {
+        setPuzzleState(prev => ({
+          ...prev,
+          [currentRoom.id]: {
+            ...(prev[currentRoom.id] || {}),
+            [puzzleId]: true
+          }
+        }));
+      }
+
+      // Display the effect message
+      if (item.turnEffect.message) {
+        outputLines.push(item.turnEffect.message);
+      }
+
+      setOutput(prev => [...prev, ...outputLines]);
+      return;
+    }
+
+    // Push parser
+    const push = parsePush(cmd);
+    if (push) {
+      // Find item in room first, then inventory
+      let item = findItemByNameOrPrefix(currentRoom.items, push.target);
+      if (!item) {
+        item = findItemByNameOrPrefix(player.inventory, push.target);
+      }
+
+      if (!item) {
+        setOutput(prev => [...prev, "You don't see that here."]);
+        return;
+      }
+
+      if (!item.pushEffect) {
+        setOutput(prev => [...prev, "You can't push that."]);
+        return;
+      }
+
+      // Check if puzzle is already solved
+      const pushPuzzleId = item.pushEffect.puzzleId;
+      const pushAlreadySolved = pushPuzzleId && puzzleState[currentRoom.id]?.[pushPuzzleId];
+
+      if (pushAlreadySolved) {
+        setOutput(prev => [...prev, "It won't budge. It's as if it's stuck in place."]);
+        return;
+      }
+
+      // Display the activity description
+      const outputLines = [item.pushDescription || `You push the ${item.name}.`];
+
+      // Update puzzle state if this effect has a puzzleId
+      if (pushPuzzleId) {
+        setPuzzleState(prev => ({
+          ...prev,
+          [currentRoom.id]: {
+            ...(prev[currentRoom.id] || {}),
+            [pushPuzzleId]: true
+          }
+        }));
+      }
+
+      // Display the effect message
+      if (item.pushEffect.message) {
+        outputLines.push(item.pushEffect.message);
+      }
+
+      setOutput(prev => [...prev, ...outputLines]);
+      return;
+    }
+
+    // Pull parser
+    const pull = parsePull(cmd);
+    if (pull) {
+      // Find item in room first, then inventory
+      let item = findItemByNameOrPrefix(currentRoom.items, pull.target);
+      if (!item) {
+        item = findItemByNameOrPrefix(player.inventory, pull.target);
+      }
+
+      if (!item) {
+        setOutput(prev => [...prev, "You don't see that here."]);
+        return;
+      }
+
+      if (!item.pullEffect) {
+        setOutput(prev => [...prev, "You can't pull that."]);
+        return;
+      }
+
+      // Check if puzzle is already solved
+      const pullPuzzleId = item.pullEffect.puzzleId;
+      const pullAlreadySolved = pullPuzzleId && puzzleState[currentRoom.id]?.[pullPuzzleId];
+
+      if (pullAlreadySolved) {
+        setOutput(prev => [...prev, "You've already activated this. It won't respond."]);
+        return;
+      }
+
+      // Display the activity description
+      const outputLines = [item.pullDescription || `You pull the ${item.name}.`];
+
+      // Update puzzle state if this effect has a puzzleId
+      if (pullPuzzleId) {
+        setPuzzleState(prev => ({
+          ...prev,
+          [currentRoom.id]: {
+            ...(prev[currentRoom.id] || {}),
+            [pullPuzzleId]: true
+          }
+        }));
+      }
+
+      // Display the effect message
+      if (item.pullEffect.message) {
+        outputLines.push(item.pullEffect.message);
+      }
+
+      setOutput(prev => [...prev, ...outputLines]);
+      return;
+    }
+
     // Inventory command
     if (cmd === 'i' || cmd === 'inventory') {
       if (player.inventory.length === 0) {
@@ -673,6 +1097,8 @@ const App: React.FC = () => {
         openItems: Array.from(openItems),
         openDoors: Array.from(openDoors),
         containerContents,
+        puzzleState,
+        npcState,
       };
       saveSystem.saveToSlot(targetSlot, gameState);
       setCurrentSaveSlot(targetSlot);
@@ -692,15 +1118,22 @@ const App: React.FC = () => {
           return;
         }
         // Restore state
-        const targetRoom = rooms.find(r => r.id === state.currentRoomId);
+        const targetRoom = findRoomById(state.currentRoomId);
         if (targetRoom) {
+          const loadedPuzzleState = state.puzzleState || {};
+          const loadedNpcState = state.npcState || {};
+          const loadedOpenDoors = new Set(state.openDoors);
           setCurrentRoom(targetRoom);
           setPlayer(state.player);
           setOpenItems(new Set(state.openItems));
-          setOpenDoors(new Set(state.openDoors));
+          setOpenDoors(loadedOpenDoors);
           setContainerContents(state.containerContents);
+          setPuzzleState(loadedPuzzleState);
+          setNpcState(loadedNpcState);
           setCurrentSaveSlot(load.slotNumber);
-          setOutput(prev => [...prev, `Game loaded from Slot ${load.slotNumber}.`, targetRoom.description]);
+          
+          const roomLines = formatRoomDescription(targetRoom, loadedOpenDoors, loadedPuzzleState, loadedNpcState);
+          setOutput(prev => [...prev, `Game loaded from Slot ${load.slotNumber}.`, ...roomLines]);
         }
       } else {
         // Show load menu
@@ -718,28 +1151,29 @@ const App: React.FC = () => {
       return;
     }
 
-    // Debug teleport (development only)
-    const debugTeleport = parseDebugTeleport(cmd);
-    if (debugTeleport) {
-      if (testingGroundRooms.length > 0) {
-        const testRoom = testingGroundRooms[0];
-        setCurrentRoom(testRoom);
-        const outputLines = [`[DEBUG] Teleported to ${testRoom.name}`, testRoom.description];
-        const itemsLine = formatItemsInRoom(testRoom.items);
-        if (itemsLine) outputLines.push(itemsLine);
-        const exitList = Object.entries(testRoom.exits)
-          .map(([dir]) => dir.charAt(0).toUpperCase() + dir.slice(1))
-          .join(', ');
-        outputLines.push(exitList ? `(Exits: ${exitList})` : '(No visible exits)');
-        setOutput(prev => [...prev, ...outputLines]);
-      } else {
-        setOutput(prev => [...prev, '[DEBUG] Testing ground not available.']);
+    // Debug commands (development only)
+    const debug = parseDebug(cmd);
+    if (debug) {
+      switch (debug.subcommand) {
+        case 'teleport': {
+          if (testingGroundRooms.length > 0) {
+            const testRoom = testingGroundRooms[0];
+            setCurrentRoom(testRoom);
+            const roomLines = formatRoomDescription(testRoom, openDoors, puzzleState, npcState);
+            setOutput(prev => [...prev, `[DEBUG] Teleported to ${testRoom.name}`, ...roomLines]);
+          } else {
+            setOutput(prev => [...prev, '[DEBUG] Testing ground not available.']);
+          }
+          break;
+        }
+        default:
+          setOutput(prev => [...prev, `[DEBUG] Unknown debug command: ${debug.subcommand}`]);
       }
       return;
     }
 
     if (cmd.length > 0) {
-      setOutput(prev => [...prev, "I don't understand that command."]);
+      setOutput(prev => [...prev, "Well, that just doesn't make sense. Sorry."]);
     }
   };
 
@@ -768,15 +1202,22 @@ const App: React.FC = () => {
                       const state = saveSystem.loadFromSlot(slot.slotNumber);
                       if (state) {
                         // Load existing save
-                        const targetRoom = rooms.find(r => r.id === state.currentRoomId);
+                        const targetRoom = findRoomById(state.currentRoomId);
                         if (targetRoom) {
+                          const loadedPuzzleState = state.puzzleState || {};
+                          const loadedNpcState = state.npcState || {};
+                          const loadedOpenDoors = new Set(state.openDoors);
                           setCurrentRoom(targetRoom);
                           setPlayer(state.player);
                           setOpenItems(new Set(state.openItems));
-                          setOpenDoors(new Set(state.openDoors));
+                          setOpenDoors(loadedOpenDoors);
                           setContainerContents(state.containerContents);
+                          setPuzzleState(loadedPuzzleState);
+                          setNpcState(loadedNpcState);
                           setCurrentSaveSlot(slot.slotNumber);
-                          setOutput(prev => [...prev, `Game loaded from Slot ${slot.slotNumber}.`, targetRoom.description]);
+                          
+                          const roomLines = formatRoomDescription(targetRoom, loadedOpenDoors, loadedPuzzleState, loadedNpcState);
+                          setOutput(prev => [...prev, `Game loaded from Slot ${slot.slotNumber}.`, ...roomLines]);
                           setShowLoadMenu(false);
                         }
                       } else {
@@ -788,15 +1229,11 @@ const App: React.FC = () => {
                         setOpenItems(new Set());
                         setOpenDoors(new Set());
                         setContainerContents({ 'wooden_chest': ['copper_knife'] });
+                        setPuzzleState({});
+                        setNpcState({});
                         setCurrentSaveSlot(slot.slotNumber);
-                        const outputLines = [startRoom.description];
-                        const itemsLine = formatItemsInRoom(startRoom.items);
-                        if (itemsLine) outputLines.push(itemsLine);
-                        const exitList = Object.entries(startRoom.exits)
-                          .map(([dir]) => dir.charAt(0).toUpperCase() + dir.slice(1))
-                          .join(', ');
-                        outputLines.push(exitList ? `(Exits: ${exitList})` : '(No visible exits)');
-                        setOutput(prev => [...prev, `New game started in Slot ${slot.slotNumber}.`, ...outputLines]);
+                        const roomLines = formatRoomDescription(startRoom, new Set(), {}, {});
+                        setOutput(prev => [...prev, `New game started in Slot ${slot.slotNumber}.`, ...roomLines]);
                         setShowLoadMenu(false);
                       }
                     }}
@@ -859,6 +1296,8 @@ const App: React.FC = () => {
                 openItems: Array.from(openItems),
                 openDoors: Array.from(openDoors),
                 containerContents,
+                puzzleState,
+                npcState,
               };
               saveSystem.saveToSlot(currentSaveSlot, gameState);
               const roomName = saveSystem.getRoomNameFromId(currentRoom.id);
@@ -891,9 +1330,10 @@ const App: React.FC = () => {
         <div className={styles.gameSidebarDock}>
           {showMap && (
             <AsciiMap
-              rooms={rooms}
+              rooms={[...rooms, ...testingGroundRooms]}
               currentRoomId={currentRoom.id}
               openDoors={openDoors}
+              puzzleState={puzzleState}
               size={3}
               theme={theme}
             />

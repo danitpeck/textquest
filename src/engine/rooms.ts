@@ -9,6 +9,7 @@ export interface RoomExit {
   isDoor?: boolean;
   doorId?: string;
   aliases?: string[];
+  revealedBy?: string;  // Puzzle ID that must be solved to show this exit
 }
 
 export interface Room {
@@ -20,6 +21,7 @@ export interface Room {
   y: number;
   exits: { [direction: string]: RoomExit };
   items: string[];
+  npcs?: string[];  // NPCs present in this room
   lookDescriptions?: Record<string, string>;
   isDeathTrap?: boolean;
   deathMessage?: string;
@@ -34,6 +36,7 @@ interface RawRoom {
   y?: unknown;
   exits?: unknown;
   items?: unknown;
+  npcs?: unknown;
   lookDescriptions?: unknown;
   isDeathTrap?: unknown;
   deathMessage?: unknown;
@@ -67,6 +70,7 @@ function validateRoom(raw: unknown): Room {
     y: typeof roomObj.y === 'number' ? roomObj.y : 0,
     exits,
     items: Array.isArray(roomObj.items) ? (roomObj.items as unknown[]).map(String) : [],
+    npcs: Array.isArray(roomObj.npcs) ? (roomObj.npcs as unknown[]).map(String) : undefined,
     lookDescriptions: roomObj.lookDescriptions && typeof roomObj.lookDescriptions === 'object'
       ? Object.fromEntries(
           Object.entries(roomObj.lookDescriptions as Record<string, unknown>).map(([k, v]) => [k, String(v)])

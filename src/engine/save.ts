@@ -6,6 +6,8 @@ export interface GameState {
   openItems: string[];
   openDoors: string[];
   containerContents: Record<string, string[]>;
+  puzzleState?: Record<string, Record<string, boolean>>;  // { roomId: { puzzleId: solved } } - optional for backwards compatibility
+  npcState?: Record<string, boolean>;  // { npcId: visible } - optional for backwards compatibility
 }
 
 export interface SaveSlot {

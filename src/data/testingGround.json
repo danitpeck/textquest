@@ -39,7 +39,11 @@
       "north": { "to": "deep_forest", "exitDescription": "A path leads north into the deep forest." },
       "east": { "to": "river_bank", "exitDescription": "A path leads east to the river bank." },
       "south": { "to": "edge_south", "exitDescription": "A path leads south." },
-      "west": { "to": "edge_west", "exitDescription": "A path leads west." }
+      "west": { "to": "edge_west", "exitDescription": "A path leads west." },
+      "pottery": { 
+        "to": "pottery_chamber", 
+        "exitDescription": "A barely visible entrance lies hidden among the roots of a massive tree."
+      }
     },
     "items": ["mossy_stone", "wildflower"],
     "lookDescriptions": {
@@ -187,6 +191,47 @@
       "river": "The river flows gently, its surface sparkling in the sunlight.",
       "pebble": "A smooth, flat pebble lies at your feet.",
       "reeds": "Tall green reeds sway at the water's edge."
+    }
+  },
+  {
+    "id": "pottery_chamber",
+    "name": "Ancient Pottery Chamber",
+    "description": "You stand in a circular chamber lined with clay shelves. Massive clay pots sit arranged in a perfect pattern, their surfaces carved with ancient symbols. Dust and time have turned everything a faded ochre color. The chamber feels timeless and eerie.",
+    "skyDescription": "No sky is visible here - you are deep underground.",
+    "x": 3,
+    "y": 1,
+    "exits": {
+      "out": {
+        "to": "forest_clearing",
+        "exitDescription": "The way back to the forest clearing."
+      },
+      "north": {
+        "to": "secret_chamber",
+        "revealedBy": "potsPuzzle",
+        "exitDescription": "A hidden passage opens to the north, revealing stone steps descending into darkness."
+      }
+    },
+    "items": ["massive_clay_pots"],
+    "lookDescriptions": {}
+  },
+  {
+    "id": "secret_chamber",
+    "name": "Secret Chamber",
+    "description": "Stone steps descend into a vast hidden chamber. The walls are smooth and carved with the same ancient symbols from the pottery chamber above. In the center lies a pedestal with a glowing crystal.",
+    "skyDescription": "No sky is visible - you are deep in the earth.",
+    "x": 3,
+    "y": 0,
+    "exits": {
+      "south": {
+        "to": "pottery_chamber",
+        "exitDescription": "The way back to the pottery chamber."
+      }
+    },
+    "items": [],
+    "lookDescriptions": {
+      "crystal": "A glowing crystal that pulses with an otherworldly light.",
+      "pedestal": "An ancient stone pedestal, worn smooth by countless hands.",
+      "chamber": "The chamber is vast and empty, echoing with the weight of time."
     }
   }
 ]

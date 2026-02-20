@@ -6,11 +6,12 @@ interface AsciiMapProps {
   rooms: Room[];
   currentRoomId: string;
   openDoors: Set<string>;
+  puzzleState: Record<string, Record<string, boolean>>;
   size?: number; // grid size (default 3)
   theme?: 'default' | 'amber' | 'green';
 }
 
-const AsciiMap: React.FC<AsciiMapProps> = ({ rooms, currentRoomId, openDoors, size = 3, theme = 'default' }) => {
+const AsciiMap: React.FC<AsciiMapProps> = ({ rooms, currentRoomId, openDoors, puzzleState, size = 3, theme = 'default' }) => {
   // Find current room's coordinates
   const current = rooms.find(r => r.id === currentRoomId);
   const center = current ? { x: current.x, y: current.y } : { x: 0, y: 0 };
@@ -18,22 +19,56 @@ const AsciiMap: React.FC<AsciiMapProps> = ({ rooms, currentRoomId, openDoors, si
   const minX = center.x - half;
   const minY = center.y - half;
 
-  // Helper: Check if a room is behind a closed door from current room
-  const isBehindClosedDoor = (roomId: string): boolean => {
-    if (!current || roomId === currentRoomId) return false;
+  // Helper: Check if an exit should be visible based on puzzle state
+  const isExitVisible = (exit: any, roomId: string): boolean => {
+    if (!exit.revealedBy) {
+      return true;
+    }
+    const roomPuzzles = puzzleState[roomId] || {};
+    return roomPuzzles[exit.revealedBy] === true;
+  };
+
+  // Helper: Check if a room is reachable from current room through open doors and revealed exits only
+  const getReachableRooms = (startRoomId: string): Set<string> => {
+    const reachable = new Set<string>();
+    const queue = [startRoomId];
+    reachable.add(startRoomId);
     
-    // Check all exits from current room
-    for (const [_direction, exit] of Object.entries(current.exits)) {
-      if (exit.to === roomId) {
-        // Found an exit that leads to this room
-        // Hide it if it's a closed door
-        if (exit.isDoor && exit.doorId && !openDoors.has(exit.doorId)) {
-          return true;
+    while (queue.length > 0) {
+      const roomId = queue.shift();
+      const room = rooms.find(r => r.id === roomId);
+      if (!room) continue;
+      
+      // Check all exits from this room
+      for (const [direction, exit] of Object.entries(room.exits)) {
+        if (reachable.has(exit.to)) continue; // Already visited
+        
+        // Check if this exit is hidden by an unrevealed puzzle
+        if (roomId && !isExitVisible(exit, roomId)) {
+          continue;
+        }
+        
+        // Check if this exit is blocked by a closed door
+        let isBlocked = false;
+        if (exit.isDoor) {
+          const stateKey = exit.doorId ? `door:${exit.doorId}` : `${roomId}-${direction}`;
+          if (!openDoors.has(stateKey)) {
+            isBlocked = true;
+          }
+        }
+        
+        if (!isBlocked) {
+          reachable.add(exit.to);
+          queue.push(exit.to);
         }
       }
     }
-    return false;
+    
+    return reachable;
   };
+
+  // Get all reachable rooms from current position
+  const reachableRooms = getReachableRooms(currentRoomId);
 
   // Build a 2D array of room objects (or null)
   const grid: (Room | null)[][] = [];
@@ -44,11 +79,11 @@ const AsciiMap: React.FC<AsciiMapProps> = ({ rooms, currentRoomId, openDoors, si
       const ry = minY + y;
       const found = rooms.find(r => r.x === rx && r.y === ry);
       
-      // Hide rooms behind closed doors
-      if (found && isBehindClosedDoor(found.id)) {
-        row.push(null);
+      // Only show rooms that are reachable through open doors
+      if (found && reachableRooms.has(found.id)) {
+        row.push(found);
       } else {
-        row.push(found || null);
+        row.push(null);
       }
     }
     grid.push(row);
@@ -62,51 +97,87 @@ const AsciiMap: React.FC<AsciiMapProps> = ({ rooms, currentRoomId, openDoors, si
           {row.map((cell, x) => {
             if (!cell) return <span key={x}>&nbsp;&nbsp;</span>;
 
-            // Determine symbol and color by room type and theme
-            let symbol = '*';
-            let color = '#3f6'; // default: green for forest
-            if (cell.description.toLowerCase().includes('river')) {
+            // Determine symbol and color by room type
+            let symbol = '■';
+            let color = '#888'; // default: gray for generic dungeon room
+            
+            const desc = cell.description.toLowerCase();
+            const name = cell.name.toLowerCase();
+            
+            // Death traps
+            if (cell.isDeathTrap) {
+              symbol = 'X';
+              color = '#f44';
+            }
+            // Dungeon-specific rooms
+            else if (name.includes('hallway') || name.includes('corridor')) {
+              symbol = '=';
+              color = '#ca8';
+            } else if (name.includes('library')) {
+              symbol = 'L';
+              color = '#9cf';
+            } else if (name.includes('chamber') && name.includes('secret')) {
+              symbol = '?';
+              color = '#f8f';
+            } else if (name.includes('chamber') || name.includes('room')) {
+              symbol = '□';
+              color = '#aaa';
+            } else if (name.includes('dining') || name.includes('hall')) {
+              symbol = 'H';
+              color = '#da9';
+            } else if (name.includes('garden') || desc.includes('garden')) {
+              symbol = '&';
+              color = '#5d5';
+            } else if (name.includes('pottery')) {
+              symbol = 'P';
+              color = '#ca8';
+            }
+            // Outdoor/terrain (kept for compatibility)
+            else if (desc.includes('river')) {
               symbol = '~';
               color = '#4cf';
-            } else if (cell.description.toLowerCase().includes('clearing')) {
+            } else if (desc.includes('clearing')) {
               symbol = 'o';
               color = '#fd0';
-            } else if (cell.description.toLowerCase().includes('mountain')) {
+            } else if (desc.includes('mountain')) {
               symbol = '^';
               color = '#888';
-            } else if (cell.description.toLowerCase().includes('cave')) {
+            } else if (desc.includes('cave')) {
               symbol = '0';
               color = '#aaa';
-            } else if (cell.description.toLowerCase().includes('building')) {
+            } else if (desc.includes('building')) {
               symbol = '#';
               color = '#d22';
-            } else if (cell.description.toLowerCase().includes('desert')) {
+            } else if (desc.includes('desert')) {
               symbol = '.';
               color = '#fa9';
-            } else if (cell.description.toLowerCase().includes('swamp')) {
+            } else if (desc.includes('swamp')) {
               symbol = '%';
               color = '#5a3';
-            } else if (cell.description.toLowerCase().includes('beach')) {
+            } else if (desc.includes('beach')) {
               symbol = '=';
               color = '#ffdd99';
-            } else if (cell.description.toLowerCase().includes('ocean')) {
+            } else if (desc.includes('ocean')) {
               symbol = '~';
               color = '#06f';
-            } else if (cell.description.toLowerCase().includes('road')) {
+            } else if (desc.includes('road')) {
               symbol = '+';
               color = '#b5651d';
-            } else if (cell.description.toLowerCase().includes('plains')) {
+            } else if (desc.includes('plains')) {
               symbol = '"';
               color = '#9f6';
-            } else if (cell.description.toLowerCase().includes('snow')) {
+            } else if (desc.includes('snow')) {
               symbol = '*';
               color = '#eef';
-            } else if (cell.description.toLowerCase().includes('volcano')) {
+            } else if (desc.includes('volcano')) {
               symbol = '^';
               color = '#f44';
-            } else if (cell.description.toLowerCase().includes('ruins')) {
+            } else if (desc.includes('ruins')) {
               symbol = '%';
               color = '#888';
+            } else if (desc.includes('forest')) {
+              symbol = '*';
+              color = '#3f6';
             }
 
             // Theme overrides

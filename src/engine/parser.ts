@@ -21,9 +21,15 @@ export function parseLook(command: string): { type: 'look', target?: string } | 
       const containerName = words.slice(2).join(' ');
       return containerName ? { type: 'look', target: `in ${containerName}` } : { type: 'look' };
     }
-    // look <direction>
-    const dir = directionSynonyms[words[1]] || words[1];
-    return { type: 'look', target: dir };
+    // look <direction> or look <multi-word target>
+    const dir = directionSynonyms[words[1]];
+    if (dir) {
+      // It's a direction synonym, use the expanded form
+      return { type: 'look', target: dir };
+    }
+    // Otherwise capture all remaining words as the target (for multi-word aliases, lookDescriptions, etc.)
+    const target = words.slice(1).join(' ');
+    return { type: 'look', target };
   }
   return null;
 }
@@ -172,10 +178,27 @@ export function parseClear(command: string): { type: 'clear'; slotNumber?: 1 | 2
   return null;
 }
 
-// ============ DEBUG TELEPORT COMMAND (DEVELOPMENT ONLY) ============
-export function parseDebugTeleport(command: string): { type: 'debug_teleport' } | null {
+// ============ DEBUG COMMANDS (DEVELOPMENT ONLY) ============
+export function parseDebug(command: string): { type: 'debug'; subcommand: string } | null {
   const cmd = command.trim().toLowerCase();
-  if (cmd === 'testground' || cmd === 'test ground' || cmd === 'testing ground' || cmd === 'debug test') {
+  if (cmd.startsWith('debug ')) {
+    const subcommand = cmd.slice(6).trim();
+    if (subcommand) {
+      return { type: 'debug', subcommand };
+    }
+  }
+  return null;
+}
+
+// Legacy function for backwards compatibility
+export function parseDebugTeleport(command: string): { type: 'debug_teleport' } | null {
+  const debug = parseDebug(command);
+  if (debug && (debug.subcommand === 'teleport' || debug.subcommand === 'test' || debug.subcommand === 'testground')) {
+    return { type: 'debug_teleport' };
+  }
+  // Also support old command formats for backwards compatibility
+  const cmd = command.trim().toLowerCase();
+  if (cmd === 'testground' || cmd === 'test ground' || cmd === 'testing ground') {
     return { type: 'debug_teleport' };
   }
   return null;
@@ -206,3 +229,39 @@ export function parseMovement(command: string): string | null {
   }
   return null;
 }
+
+// ============ ACTIVITY COMMANDS (TURN, PUSH, PULL, etc.) ============
+export const turnSynonyms = ['turn', 'rotate', 'spin', 'twist'];
+export const pushSynonyms = ['push', 'shove', 'press'];
+export const pullSynonyms = ['pull', 'yank', 'tug', 'drag'];
+
+export function parseTurn(command: string): { type: 'turn', target: string } | null {
+  const words = command.trim().toLowerCase().split(/\s+/);
+  if (turnSynonyms.includes(words[0])) {
+    if (words.length < 2) return null;
+    const target = words.slice(1).join(' ');
+    return { type: 'turn', target };
+  }
+  return null;
+}
+
+export function parsePush(command: string): { type: 'push', target: string } | null {
+  const words = command.trim().toLowerCase().split(/\s+/);
+  if (pushSynonyms.includes(words[0])) {
+    if (words.length < 2) return null;
+    const target = words.slice(1).join(' ');
+    return { type: 'push', target };
+  }
+  return null;
+}
+
+export function parsePull(command: string): { type: 'pull', target: string } | null {
+  const words = command.trim().toLowerCase().split(/\s+/);
+  if (pullSynonyms.includes(words[0])) {
+    if (words.length < 2) return null;
+    const target = words.slice(1).join(' ');
+    return { type: 'pull', target };
+  }
+  return null;
+}
+

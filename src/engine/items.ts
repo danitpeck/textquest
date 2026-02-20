@@ -4,6 +4,12 @@
  * Items can be taken, opened, or placed in containers
  */
 
+export interface ActivityEffect {
+  message: string;              // What player sees
+  puzzleId?: string;            // Puzzle identifier to mark as solved
+  revealExit?: string;          // Exit ID to reveal after activity
+}
+
 export interface GameItem {
   id: string;
   name: string;
@@ -14,6 +20,13 @@ export interface GameItem {
   contents?: string[]; // item IDs inside this container
   canTake: boolean;
   weight?: number;
+  // Activity effects
+  turnDescription?: string;
+  turnEffect?: ActivityEffect;
+  pushDescription?: string;
+  pushEffect?: ActivityEffect;
+  pullDescription?: string;
+  pullEffect?: ActivityEffect;
 }
 
 /**
@@ -124,6 +137,24 @@ export const itemsDatabase: Record<string, GameItem> = {
     ],
     canTake: true,
     weight: 0.05,
+  },
+  'massive_clay_pots': {
+    id: 'massive_clay_pots',
+    name: 'massive clay pots',
+    aliases: ['massive clay pots', 'pots', 'clay pots', 'clay pot'],
+    descriptions: [
+      'Massive clay pots arranged in a precise pattern, covered in ancient carvings.',
+      'These enormous clay vessels are arranged in what appears to be a ritualistic pattern. The surface is covered in intricate carvings depicting scenes of harvest and plenty.',
+      'Ancient pottery of exceptional craftsmanship. Each pot stands as tall as you, and together they form a perfect geometric arrangement. The carvings tell a story of an ancient civilization.',
+    ],
+    canTake: false,
+    weight: 1000.0,
+    turnDescription: 'You carefully turn the massive clay pots, and they rotate with surprising ease. The ancient mechanism beneath them grinds to life...',
+    turnEffect: {
+      message: 'A hidden door opens, revealing a secret passage to the north!',
+      puzzleId: 'potsPuzzle',
+      revealExit: 'north',
+    },
   },
 };
 
