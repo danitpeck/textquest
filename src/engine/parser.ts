@@ -45,9 +45,19 @@ export function parseGet(command: string): { type: 'get', target: string } | nul
   if (getSynonyms.includes(words[0])) {
     if (words.length < 2) return null;
     // Handle "pick up" (two words)
-    const startIdx = words[0] === 'pick' && words[1] === 'up' ? 2 : 1;
-    const target = words.slice(startIdx).join(' ');
-    return { type: 'get', target };
+    let startIdx = words[0] === 'pick' && words[1] === 'up' ? 2 : 1;
+    
+    // Check for "from container" syntax and extract just the item part
+    const fromIndex = words.findIndex((w, i) => i >= startIdx && (w === 'from' || w === 'out of'));
+    let target = '';
+    if (fromIndex !== -1) {
+      // "get knife from chest" → target = "knife"
+      target = words.slice(startIdx, fromIndex).join(' ');
+    } else {
+      // Regular "get knife" → target = "knife"
+      target = words.slice(startIdx).join(' ');
+    }
+    return target ? { type: 'get', target } : null;
   }
   return null;
 }
@@ -114,6 +124,33 @@ export function parsePut(command: string): { type: 'put', item: string, containe
   return null;
 }
 
+
+// ============ SAVE/LOAD COMMANDS ============
+export function parseSave(command: string): { type: 'save'; slotNumber?: 1 | 2 | 3 } | null {
+  const words = command.trim().toLowerCase().split(/\s+/);
+  if (words[0] === 'save' || (words[0] === 'save' && words[1] === 'game')) {
+    const slotStr = words[words.length - 1];
+    const slotNum = parseInt(slotStr, 10);
+    if (slotNum >= 1 && slotNum <= 3) {
+      return { type: 'save', slotNumber: slotNum as 1 | 2 | 3 };
+    }
+    return { type: 'save' };
+  }
+  return null;
+}
+
+export function parseLoad(command: string): { type: 'load'; slotNumber?: 1 | 2 | 3 } | null {
+  const words = command.trim().toLowerCase().split(/\s+/);
+  if (words[0] === 'load' || (words[0] === 'load' && words[1] === 'game')) {
+    const slotStr = words[words.length - 1];
+    const slotNum = parseInt(slotStr, 10);
+    if (slotNum >= 1 && slotNum <= 3) {
+      return { type: 'load', slotNumber: slotNum as 1 | 2 | 3 };
+    }
+    return { type: 'load' };
+  }
+  return null;
+}
 
 const movementVerbs = [
   'go', 'walk', 'move', 'head', 'run', 'travel', 'proceed', 'step', 'enter', 'leave'

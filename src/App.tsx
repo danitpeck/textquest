@@ -9,10 +9,11 @@ import PlayerStats from './components/PlayerStats';
 
 import { rooms } from './engine/rooms';
 import type { Room } from './engine/rooms';
-import { parseMovement, parseLook, parseExamine, parseGet, parseDrop, parseOpen, parseClose, parsePut } from './engine/parser';
+import { parseMovement, parseLook, parseExamine, parseGet, parseDrop, parseOpen, parseClose, parsePut, parseSave, parseLoad } from './engine/parser';
 import { createPlayer, getDescriptionTier, canAddToInventory } from './engine/player';
 import type { Player } from './engine/player';
 import { getItemsByIds, formatItemsInRoom } from './engine/items';
+import { saveSystem, type GameState } from './engine/save';
 
 // Helper: fuzzy match item by name, alias, or prefix
 const findItemByNameOrPrefix = (itemIds: string[], searchTerm: string) => {
@@ -47,6 +48,8 @@ const App: React.FC = () => {
     // Initialize with base contents from items.ts
     'wooden_chest': ['copper_knife']
   });
+  const [currentSaveSlot, setCurrentSaveSlot] = useState<1 | 2 | 3>(2);
+  const [showLoadMenu, setShowLoadMenu] = useState(false);
   const [output, setOutput] = useState<string[]>(() => {
     const lines = [currentRoom.description];
     const itemsLine = formatItemsInRoom(currentRoom.items);
@@ -528,6 +531,52 @@ const App: React.FC = () => {
       return;
     }
 
+    // Save game parser
+    const save = parseSave(cmd);
+    if (save) {
+      const targetSlot = save.slotNumber || currentSaveSlot;
+      const gameState: GameState = {
+        currentRoomId: currentRoom.id,
+        player,
+        openItems: Array.from(openItems),
+        openDoors: Array.from(openDoors),
+        containerContents,
+      };
+      saveSystem.saveToSlot(targetSlot, gameState);
+      setCurrentSaveSlot(targetSlot);
+      const roomName = saveSystem.getRoomNameFromId(currentRoom.id);
+      setOutput(prev => [...prev, `Game saved to Slot ${targetSlot} (${roomName}).`]);
+      return;
+    }
+
+    // Load game parser
+    const load = parseLoad(cmd);
+    if (load) {
+      if (load.slotNumber) {
+        // Direct load: "load 1" or "load slot 1"
+        const state = saveSystem.loadFromSlot(load.slotNumber);
+        if (!state) {
+          setOutput(prev => [...prev, `Slot ${load.slotNumber} is empty.`]);
+          return;
+        }
+        // Restore state
+        const targetRoom = rooms.find(r => r.id === state.currentRoomId);
+        if (targetRoom) {
+          setCurrentRoom(targetRoom);
+          setPlayer(state.player);
+          setOpenItems(new Set(state.openItems));
+          setOpenDoors(new Set(state.openDoors));
+          setContainerContents(state.containerContents);
+          setCurrentSaveSlot(load.slotNumber);
+          setOutput(prev => [...prev, `Game loaded from Slot ${load.slotNumber}.`, targetRoom.description]);
+        }
+      } else {
+        // Show load menu
+        setShowLoadMenu(true);
+      }
+      return;
+    }
+
     if (cmd.length > 0) {
       setOutput(prev => [...prev, "I don't understand that command."]);
     }
@@ -544,6 +593,47 @@ const App: React.FC = () => {
 
   return (
     <div className={styles.gameContainer}>
+      {/* Load Menu Modal */}
+      {showLoadMenu && (
+        <div className={styles.modal}>
+          <div className={styles.modalContent}>
+            <h2>Load Game</h2>
+            <div className={styles.saveSlots}>
+              {saveSystem.getAllSlots().map(slot => (
+                <button
+                  key={slot.slotNumber}
+                  className={styles.saveSlotButton}
+                  onClick={() => {
+                    const state = saveSystem.loadFromSlot(slot.slotNumber);
+                    if (state) {
+                      const targetRoom = rooms.find(r => r.id === state.currentRoomId);
+                      if (targetRoom) {
+                        setCurrentRoom(targetRoom);
+                        setPlayer(state.player);
+                        setOpenItems(new Set(state.openItems));
+                        setOpenDoors(new Set(state.openDoors));
+                        setContainerContents(state.containerContents);
+                        setCurrentSaveSlot(slot.slotNumber);
+                        setOutput(prev => [...prev, `Game loaded from Slot ${slot.slotNumber}.`, targetRoom.description]);
+                        setShowLoadMenu(false);
+                      }
+                    }
+                  }}
+                >
+                  {saveSystem.formatSlotDisplay(slot)}
+                </button>
+              ))}
+            </div>
+            <button
+              className={styles.themeButton}
+              onClick={() => setShowLoadMenu(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Theme Switcher */}
       <div className={styles.themeSwitcher}>
         <button
@@ -564,6 +654,35 @@ const App: React.FC = () => {
         >
           Apple II Green
         </button>
+        
+        {/* Save/Load Buttons */}
+        <div className={styles.saveLoadButtons}>
+          <button
+            className={`${styles.themeButton} ${styles.saveLoadButton}`}
+            onClick={() => {
+              const gameState: GameState = {
+                currentRoomId: currentRoom.id,
+                player,
+                openItems: Array.from(openItems),
+                openDoors: Array.from(openDoors),
+                containerContents,
+              };
+              saveSystem.saveToSlot(currentSaveSlot, gameState);
+              const roomName = saveSystem.getRoomNameFromId(currentRoom.id);
+              setOutput(prev => [...prev, `Game saved to Slot ${currentSaveSlot} (${roomName}).`]);
+            }}
+            title={`Save to Slot ${currentSaveSlot}`}
+          >
+            Save
+          </button>
+          <button
+            className={`${styles.themeButton} ${styles.saveLoadButton}`}
+            onClick={() => setShowLoadMenu(true)}
+            title="Load a saved game"
+          >
+            Load
+          </button>
+        </div>
       </div>
 
       {/* App Title */}

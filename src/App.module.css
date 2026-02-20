@@ -103,3 +103,68 @@
     padding: 1rem 0.5rem;
   }
 }
+
+/* Modal Styles */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background: var(--bg-panel);
+  border: 2px solid var(--accent);
+  border-radius: 8px;
+  padding: 2rem;
+  min-width: 300px;
+  max-width: 450px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.modalContent h2 {
+  color: var(--text-heading);
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.saveSlots {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.saveSlotButton {
+  background: var(--bg-panel);
+  border: 1px solid var(--accent);
+  color: var(--text-main);
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.95rem;
+  text-align: left;
+  transition: all 0.2s;
+}
+
+.saveSlotButton:hover {
+  background: var(--accent);
+  color: var(--button-text);
+}
+
+.saveLoadButtons {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.saveLoadButton {
+  min-width: 70px;
+}
