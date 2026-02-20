@@ -8,8 +8,8 @@ import AsciiMap from './components/AsciiMap';
 import PlayerStats from './components/PlayerStats';
 
 import { rooms, testingGroundRooms } from './engine/rooms';
-import type { Room } from './engine/rooms';
-import { parseMovement, parseLook, parseExamine, parseGet, parseDrop, parseOpen, parseClose, parsePut, parseSave, parseLoad, parseClear, parseDebugTeleport } from './engine/parser';
+import type { Room, RoomExit } from './engine/rooms';
+import { parseMovement, parseLook, parseExamine, parseGet, parseDrop, parseOpen, parseClose, parsePut, parseSave, parseLoad, parseClear, parseDebugTeleport, directionSynonyms } from './engine/parser';
 import { createPlayer, getDescriptionTier, canAddToInventory } from './engine/player';
 import type { Player } from './engine/player';
 import { getItemsByIds, formatItemsInRoom } from './engine/items';
@@ -36,6 +36,42 @@ const findItemByNameOrPrefix = (itemIds: string[], searchTerm: string) => {
   if (item) return item;
 
   return null;
+};
+
+// Helper: find exit by direction, abbreviation, or alias
+const findExitByTarget = (exits: { [direction: string]: RoomExit }, target: string): [string, RoomExit] | null => {
+  const loweredTarget = target.toLowerCase();
+  
+  // Try exact direction match
+  if (exits[loweredTarget]) {
+    return [loweredTarget, exits[loweredTarget]];
+  }
+  
+  // Try direction abbreviation (n/s/e/w/u/d)
+  const expandedDir = directionSynonyms[loweredTarget];
+  if (expandedDir && exits[expandedDir]) {
+    return [expandedDir, exits[expandedDir]];
+  }
+  
+  // Try alias match
+  for (const [dir, exit] of Object.entries(exits)) {
+    if (exit.aliases && exit.aliases.some(alias => alias.toLowerCase() === loweredTarget)) {
+      return [dir, exit];
+    }
+  }
+  
+  return null;
+};
+
+// Helper: get a nice name for an exit (for messages)
+const getExitName = (_direction: string, exit: RoomExit): string => {
+  // If there's an alias that looks like a noun (window, gate, hatch), use it
+  if (exit.aliases && exit.aliases.length > 0) {
+    const nounAlias = exit.aliases.find(a => !directionSynonyms[a.toLowerCase()]);
+    if (nounAlias) return nounAlias;
+  }
+  // Otherwise use "door" as default
+  return 'door';
 };
 
 const App: React.FC = () => {
@@ -141,13 +177,25 @@ const App: React.FC = () => {
         }
         return;
       }
-      // look <direction>
+      // look <direction> or look <alias>
       const dir = look.target;
-      const exit = currentRoom.exits[dir];
+      let exit = currentRoom.exits[dir];
+      let matchedDirection = dir;
+      
+      // If not found by direction name, check if it's an alias
+      if (!exit) {
+        const found = findExitByTarget(currentRoom.exits, dir);
+        if (found) {
+          const [foundDirection, foundExit] = found;
+          exit = foundExit;
+          matchedDirection = foundDirection;
+        }
+      }
+      
       if (exit) {
         // Check if it's a door and show appropriate description based on state
         if (exit.isDoor) {
-          const stateKey = exit.doorId ? `door:${exit.doorId}` : `${currentRoom.id}-${dir}`;
+          const stateKey = exit.doorId ? `door:${exit.doorId}` : `${currentRoom.id}-${matchedDirection}`;
           const isOpen = openDoors.has(stateKey);
           
           // Use state-specific descriptions if available, otherwise fall back to generic exitDescription
@@ -179,15 +227,18 @@ const App: React.FC = () => {
     // Open/Close parser (check before movement so "open north" doesn't trigger movement)
     const open = parseOpen(cmd);
     if (open) {
-      // Check for doors first
-      const doorMatch = Object.entries(currentRoom.exits).find(([dir, exit]) => {
-        const isDoor = exit.isDoor === true;
-        const dirName = dir.toLowerCase();
-        return isDoor && (dirName === open.target || open.target === 'door' || open.target === `${open.target} door`);
-      });
-
-      if (doorMatch) {
-        const [dir, exit] = doorMatch;
+      // Check for doors first (using direction, abbreviation, or alias)
+      const exitMatch = findExitByTarget(currentRoom.exits, open.target);
+      
+      if (exitMatch) {
+        const [dir, exit] = exitMatch;
+        
+        // Check if this exit is actually a door
+        if (exit.isDoor !== true) {
+          setOutput(prev => [...prev, "That's not something you can open."]);
+          return;
+        }
+        
         // Use doorId if available, otherwise use roomId-exitName
         const stateKey = exit.doorId ? `door:${exit.doorId}` : `${currentRoom.id}-${dir}`;
         if (openDoors.has(stateKey)) {
@@ -195,13 +246,8 @@ const App: React.FC = () => {
           return;
         }
         setOpenDoors(prev => new Set([...prev, stateKey]));
-        setOutput(prev => [...prev, `You open the door.`]);
-        return;
-      }
-
-      // Check if they're trying to open a direction without it being marked as a door
-      if (Object.keys(currentRoom.exits).includes(open.target)) {
-        setOutput(prev => [...prev, "That's not something you can open."]);
+        const exitName = getExitName(dir, exit);
+        setOutput(prev => [...prev, `You open the ${exitName}.`]);
         return;
       }
 
@@ -261,15 +307,18 @@ const App: React.FC = () => {
 
     const close = parseClose(cmd);
     if (close) {
-      // Check for doors first
-      const doorMatch = Object.entries(currentRoom.exits).find(([dir, exit]) => {
-        const isDoor = exit.isDoor === true;
-        const dirName = dir.toLowerCase();
-        return isDoor && (dirName === close.target || close.target === 'door' || close.target === `${close.target} door`);
-      });
-
-      if (doorMatch) {
-        const [dir, exit] = doorMatch;
+      // Check for doors first (using direction, abbreviation, or alias)
+      const exitMatch = findExitByTarget(currentRoom.exits, close.target);
+      
+      if (exitMatch) {
+        const [dir, exit] = exitMatch;
+        
+        // Check if this exit is actually a door
+        if (exit.isDoor !== true) {
+          setOutput(prev => [...prev, "That's not something you can close."]);
+          return;
+        }
+        
         // Use doorId if available, otherwise use roomId-exitName
         const stateKey = exit.doorId ? `door:${exit.doorId}` : `${currentRoom.id}-${dir}`;
         if (!openDoors.has(stateKey)) {
@@ -281,7 +330,8 @@ const App: React.FC = () => {
           updated.delete(stateKey);
           return updated;
         });
-        setOutput(prev => [...prev, `You close the door.`]);
+        const exitName = getExitName(dir, exit);
+        setOutput(prev => [...prev, `You close the ${exitName}.`]);
         return;
       }
 
@@ -318,6 +368,7 @@ const App: React.FC = () => {
     // Movement parser - check cardinal directions or arbitrary exit names
     const dir = parseMovement(cmd);
     let exit = dir ? currentRoom.exits[dir] : null;
+    let matchedDirection = dir || '';
     
     // If not found via parseMovement, check if any word in the command matches an exit name directly
     if (!exit) {
@@ -325,6 +376,7 @@ const App: React.FC = () => {
       for (const word of words) {
         if (currentRoom.exits[word]) {
           exit = currentRoom.exits[word];
+          matchedDirection = word;
           break;
         }
       }
@@ -333,9 +385,10 @@ const App: React.FC = () => {
     if (exit) {
       // Check if this exit is a closed door
       if (exit.isDoor === true) {
-        const stateKey = exit.doorId ? `door:${exit.doorId}` : `${currentRoom.id}-${Object.keys(currentRoom.exits).find(k => currentRoom.exits[k] === exit)}`;
+        const stateKey = exit.doorId ? `door:${exit.doorId}` : `${currentRoom.id}-${matchedDirection}`;
         if (!openDoors.has(stateKey)) {
-          setOutput(prev => [...prev, "The door is closed."]);
+          const exitName = getExitName(matchedDirection, exit);
+          setOutput(prev => [...prev, `The ${exitName} is closed.`]);
           return;
         }
       }
@@ -348,7 +401,7 @@ const App: React.FC = () => {
         // Check if this room is a death trap
         if (nextRoom.isDeathTrap) {
           const deathMsg = nextRoom.deathMessage || "You have died.";
-          setOutput(prev => [...prev, nextRoom.description, '', deathMsg, '', "GAME OVER", '', "Type 'load' to restore a saved game."]);
+          setOutput(prev => [...prev, nextRoom.description, '', deathMsg, '', "Type 'load' to restore a saved game."]);
           return;
         }
         
@@ -831,6 +884,7 @@ const App: React.FC = () => {
             <AsciiMap
               rooms={rooms}
               currentRoomId={currentRoom.id}
+              openDoors={openDoors}
               size={3}
               theme={theme}
             />

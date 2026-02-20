@@ -8,6 +8,7 @@ export interface RoomExit {
   exitDescriptionClosed?: string;
   isDoor?: boolean;
   doorId?: string;
+  aliases?: string[];
 }
 
 export interface Room {

@@ -1,5 +1,5 @@
 // Direction synonyms
-const directionSynonyms: Record<string, string> = {
+export const directionSynonyms: Record<string, string> = {
   n: 'north', north: 'north',
   s: 'south', south: 'south',
   e: 'east', east: 'east',

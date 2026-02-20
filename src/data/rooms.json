@@ -13,14 +13,27 @@
         "doorId": "red_stone_door"
       },
       "east": {
-        "to": "instant_death_garden",
-        "exitDescription": "The clouded glass of this window is bordered on all sides by a smooth stone frame. It is unlatched.",
+        "to": "thorny_poisonous_garden",
+        "exitDescriptionOpen": "Outside, you see a deadly garden lined with thorny bushes and pungent flowers of dubious origin.",
+        "exitDescriptionClosed": "The clouded glass of this window is bordered on all sides by a smooth stone frame. It is unlatched.",
         "isDoor": true,
-        "doorId": "clouded_window"
+        "doorId": "clouded_window",
+        "aliases": ["window"]
       }  
     },
     "items": [],
     "lookDescriptions": {}
+  },
+    {
+    "id": "thorny_poisonous_garden",
+    "name": "Thorny Poisonous Garden",
+    "description": "You climb out of the window into the deadly, thorny, poisonous garden. On a better day, you might have got away with only a few scratches and a foot full of thorns. Unfortunately for you, this garden is home to a large, hungry, ambulatory plant by the name of Rashflower, and these actions have offered you up as her dinner.",
+    "isDeathTrap": true,
+    "deathMessage": "You have died.",
+    "x": 1,
+    "y": 0,
+    "exits": {},
+    "items": []
   },
   {
     "id": "hallway_of_torches",

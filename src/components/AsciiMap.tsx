@@ -5,17 +5,35 @@ import type { Room } from '../engine/rooms';
 interface AsciiMapProps {
   rooms: Room[];
   currentRoomId: string;
+  openDoors: Set<string>;
   size?: number; // grid size (default 3)
   theme?: 'default' | 'amber' | 'green';
 }
 
-const AsciiMap: React.FC<AsciiMapProps> = ({ rooms, currentRoomId, size = 3, theme = 'default' }) => {
+const AsciiMap: React.FC<AsciiMapProps> = ({ rooms, currentRoomId, openDoors, size = 3, theme = 'default' }) => {
   // Find current room's coordinates
   const current = rooms.find(r => r.id === currentRoomId);
   const center = current ? { x: current.x, y: current.y } : { x: 0, y: 0 };
   const half = Math.floor(size / 2);
   const minX = center.x - half;
   const minY = center.y - half;
+
+  // Helper: Check if a room is behind a closed door from current room
+  const isBehindClosedDoor = (roomId: string): boolean => {
+    if (!current || roomId === currentRoomId) return false;
+    
+    // Check all exits from current room
+    for (const [_direction, exit] of Object.entries(current.exits)) {
+      if (exit.to === roomId) {
+        // Found an exit that leads to this room
+        // Hide it if it's a closed door
+        if (exit.isDoor && exit.doorId && !openDoors.has(exit.doorId)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
 
   // Build a 2D array of room objects (or null)
   const grid: (Room | null)[][] = [];
@@ -25,7 +43,13 @@ const AsciiMap: React.FC<AsciiMapProps> = ({ rooms, currentRoomId, size = 3, the
       const rx = minX + x;
       const ry = minY + y;
       const found = rooms.find(r => r.x === rx && r.y === ry);
-      row.push(found || null);
+      
+      // Hide rooms behind closed doors
+      if (found && isBehindClosedDoor(found.id)) {
+        row.push(null);
+      } else {
+        row.push(found || null);
+      }
     }
     grid.push(row);
   }
