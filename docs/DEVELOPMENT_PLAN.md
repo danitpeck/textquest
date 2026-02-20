@@ -11,11 +11,12 @@
    - ✅ Multi-word command support (put down, set down)
    - 🔄 **Containers** (IN PROGRESS) - Items with contents, open/close, take/put items from containers
 
-### 2. **Save/Load System** (CRITICAL - NEXT PRIORITY)
-   - 🔄 Game state persistence (player location, inventory, skills, room items)
-   - 🔄 Door/item open state persistence
-   - 🔄 Save slots UI
-   - 🔄 Auto-save on room change
+### 2. **Save/Load System** ✅ COMPLETE
+   - ✅ 3-slot save system with localStorage
+   - ✅ Persists: location, inventory, skills, item/door state, containers
+   - ✅ Save/Load buttons in UI
+   - ✅ Load menu modal with room names and timestamps
+   - ✅ Commands: save, save 1/2/3, load, load 1/2/3
 
 ### 3. **World Expansion**
    - 📦 Expand rooms from 9 to 20+ with story locations
