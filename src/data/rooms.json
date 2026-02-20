@@ -1,13 +1,50 @@
 [
   {
-    "id": "starting_room",
-    "name": "Starting Room",
-    "description": "This is a placeholder room. Your Writer will replace this with the real game world.",
-    "skyDescription": "You can see the sky above.",
+    "id": "red_stone_chamber",
+    "name": "Red Stone Chamber",
+    "description": "This is a small, dank, red stone room with faded carvings in its walls. There is one heavy stone door. Light streams in through the window on the opposite wall.",
     "x": 0,
     "y": 0,
-    "exits": {},
+    "exits": {
+      "west": {
+        "to": "",
+        "exitDescription": "Though worn with time, this door is carved of the same stone as the rest of the room. It is unlocked.",
+        "isDoor": true,
+        "doorId": "red_stone_door"
+      },
+      "east": {
+        "to": "instant_death_garden",
+        "exitDescription": "The clouded glass of this window is bordered on all sides by a smooth stone frame. It is unlatched.",
+        "isDoor": true,
+        "doorId": "clouded_window"
+      }  
+    },
     "items": [],
     "lookDescriptions": {}
+  },
+  {
+    "id": "hallway_of_torches",
+    "name": "Hallway of Torches",
+    "description": "This is hallway is ensconced with lit torches that flicker and dance in the moving air. Behind you lies the heavy stone door from which you came. Ahead there stands another stone door, marked with a yellow rune.",
+    "x": -1,
+    "y": 0,
+    "exits": {
+      "east": {
+        "to": "red_stone_chamber",
+        "exitDescription": "Carved of red stone. This door stands open.",
+        "isDoor": true,
+        "doorId": "red_stone_door"
+      },
+      "west": {
+        "to": "chamber_of_runes",
+        "exitDescription": "Carved of red stone, this door has been painted with a bright yellow rune. It is unlocked.",
+        "isDoor": true,
+        "doorId": "yellow_rune_door"
+      }
+    },
+    "items": [],
+    "lookDescriptions": {
+      "rune": "A yellow rune etched into the stone door. It glows faintly."
+    }
   }
 ]

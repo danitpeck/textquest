@@ -144,12 +144,32 @@ const App: React.FC = () => {
       // look <direction>
       const dir = look.target;
       const exit = currentRoom.exits[dir];
-      if (exit && exit.exitDescription) {
-        setOutput(prev => [...prev, exit.exitDescription ?? "You see nothing special that way."]);
-        return;
-      } else if (exit) {
-        setOutput(prev => [...prev, "You see nothing special that way."]);
-        return;
+      if (exit) {
+        // Check if it's a door and show appropriate description based on state
+        if (exit.isDoor) {
+          const stateKey = exit.doorId ? `door:${exit.doorId}` : `${currentRoom.id}-${dir}`;
+          const isOpen = openDoors.has(stateKey);
+          
+          // Use state-specific descriptions if available, otherwise fall back to generic exitDescription
+          let description = "You see nothing special that way.";
+          if (isOpen && exit.exitDescriptionOpen) {
+            description = exit.exitDescriptionOpen;
+          } else if (!isOpen && exit.exitDescriptionClosed) {
+            description = exit.exitDescriptionClosed;
+          } else if (exit.exitDescription) {
+            description = exit.exitDescription;
+          }
+          
+          setOutput(prev => [...prev, description]);
+          return;
+        } else if (exit.exitDescription) {
+          const desc = exit.exitDescription;
+          setOutput(prev => [...prev, desc]);
+          return;
+        } else {
+          setOutput(prev => [...prev, "You see nothing special that way."]);
+          return;
+        }
       }
       // fallback
       setOutput(prev => [...prev, "You see nothing special."]);
@@ -324,6 +344,14 @@ const App: React.FC = () => {
       if (nextRoom) {
         setCurrentRoom(nextRoom);
         setPlayer(prev => ({ ...prev, location: nextRoom.id }));
+        
+        // Check if this room is a death trap
+        if (nextRoom.isDeathTrap) {
+          const deathMsg = nextRoom.deathMessage || "You have died.";
+          setOutput(prev => [...prev, nextRoom.description, '', deathMsg, '', "GAME OVER", '', "Type 'load' to restore a saved game."]);
+          return;
+        }
+        
         const exitList = Object.entries(nextRoom.exits)
           .map(([dir]) => dir.charAt(0).toUpperCase() + dir.slice(1))
           .join(', ');

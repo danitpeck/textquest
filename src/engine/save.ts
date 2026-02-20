@@ -86,6 +86,11 @@ export const saveSystem = {
   getRoomNameFromId(roomId: string): string {
     // This is a simple mapping - in production you'd import rooms
     const roomNames: Record<string, string> = {
+      'red_stone_chamber': 'Red Stone Chamber',
+      'hallway_of_torches': 'Hallway of Torches',
+      'chamber_of_runes': 'Chamber of Runes',
+      'instant_death_garden': 'Instant Death Garden',
+      // Testing ground rooms
       'corner_nw': 'NW Corner',
       'edge_west': 'West Edge',
       'forest_clearing': 'Forest Clearing',

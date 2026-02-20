@@ -4,6 +4,8 @@ import testingGroundData from '../data/testingGround.json';
 export interface RoomExit {
   to: string;
   exitDescription?: string;
+  exitDescriptionOpen?: string;
+  exitDescriptionClosed?: string;
   isDoor?: boolean;
   doorId?: string;
 }
@@ -18,6 +20,8 @@ export interface Room {
   exits: { [direction: string]: RoomExit };
   items: string[];
   lookDescriptions?: Record<string, string>;
+  isDeathTrap?: boolean;
+  deathMessage?: string;
 }
 
 interface RawRoom {
@@ -30,6 +34,8 @@ interface RawRoom {
   exits?: unknown;
   items?: unknown;
   lookDescriptions?: unknown;
+  isDeathTrap?: unknown;
+  deathMessage?: unknown;
 }
 
 function isRoomExit(obj: unknown): obj is RoomExit {
@@ -65,6 +71,8 @@ function validateRoom(raw: unknown): Room {
           Object.entries(roomObj.lookDescriptions as Record<string, unknown>).map(([k, v]) => [k, String(v)])
         )
       : undefined,
+    isDeathTrap: typeof roomObj.isDeathTrap === 'boolean' ? roomObj.isDeathTrap : undefined,
+    deathMessage: roomObj.deathMessage ? String(roomObj.deathMessage) : undefined,
   };
 }
 
